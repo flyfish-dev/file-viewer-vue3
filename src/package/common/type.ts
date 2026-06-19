@@ -227,7 +227,7 @@ export type FileViewerEmits = CoreFileViewerComponentEmits;
 /**
  * `<file-viewer>` 组件实例对外暴露的统一方法集。
  *
- * Vue 模板 ref、文档比对页面、纯 JS 和后续 React / Svelte wrapper
+ * Vue 模板 ref、文档比对页面、纯 JS 和后续 React / Svelte standard component package
  * 都应围绕这组能力保持同名同语义，避免不同生态出现 API 漂移。
  */
 export type FileViewerExpose = CoreFileViewerPublicApi;

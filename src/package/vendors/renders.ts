@@ -26,7 +26,7 @@ const createWrapper = (el: HTMLDivElement): AppWrapper => ({
 })
 
 // 已经下沉到 core 的渲染器直接复用 core handler。Vue3 只维护尚未完全
-// framework-neutral 的强交互链路，避免 wrapper 继续堆积重复 vendor 入口。
+// framework-neutral 的强交互链路，避免组件层继续堆积重复 vendor 入口。
 const handlers: Array<VueRendererHandler> = [
   ...coreBrowserRendererHandlers
 ]

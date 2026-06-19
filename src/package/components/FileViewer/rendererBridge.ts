@@ -13,7 +13,7 @@ export type FileViewerVueRenderSession = FileRenderHandlerRendererSession<Render
 /**
  * Bridges the Vue renderer registry into the framework-neutral core renderer session.
  *
- * The Vue wrapper owns only the async component loaders and DOM surface; source
+ * The Vue component package owns only the async component loaders and DOM surface; source
  * normalization, handler dispatch and session teardown stay in @file-viewer/core.
  */
 export async function createVueRenderSession(

@@ -13,7 +13,7 @@ interface UseViewerPublicApiOptions extends Omit<FileViewerExpose, 'getOperation
  * FileViewer 组件对外实例方法的统一门面。
  *
  * 主组件只负责 `defineExpose`，这里集中维护 ref API 的方法清单和快照语义，
- * 便于后续 React / Svelte / pure JS wrapper 对齐同一套外部能力。
+ * 便于后续 React / Svelte / pure JS component package 对齐同一套外部能力。
  */
 export const useViewerPublicApi = ({
   operationAvailability,

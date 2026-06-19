@@ -32,7 +32,7 @@ const ensureNativeViewerStyles = () => {
 /**
  * Mount the full Flyfish renderer stack directly into a DOM container.
  *
- * This is the native integration base used by framework wrappers. Wrappers keep
+ * This is the native integration base used by framework component packages. Component packages keep
  * their own component lifecycle and call the shared core controller for loading,
  * teardown, search, zoom, print and export.
  */

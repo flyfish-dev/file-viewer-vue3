@@ -1,6 +1,6 @@
 # @file-viewer/vue3
 
-标准 Vue3 native wrapper 包。它维护 Vue3 组件生命周期和本地 controller，同时消费共享的 `@file-viewer/core` 底层契约与 core browser engine，提供插件安装、组件 props、生命周期事件、搜索/缩放/打印/导出等 ref API。
+标准 Vue3 native 组件包。它维护 Vue3 组件生命周期和本地 controller，同时消费共享的 `@file-viewer/core` 底层契约与 core browser engine，提供插件安装、组件 props、生命周期事件、搜索/缩放/打印/导出等 ref API。
 
 ```bash
 npm install vue @file-viewer/vue3
@@ -32,18 +32,18 @@ createApp(App).use(FileViewer).mount('#app')
 </template>
 ```
 
-组件实例支持 `downloadOriginalFile()`、`printRenderedHtml()`、`exportRenderedHtml()`、`zoomIn()`、`zoomOut()`、`resetZoom()`、`searchDocument()`、`clearDocumentSearch()`、`nextSearchResult()`、`previousSearchResult()`、`collectDocumentAnchors()`、`scrollToAnchor()`、`scrollToLine()` 和 `getDocumentTextChunks()`。历史包名 `@flyfish-group/file-viewer3` 和 `file-viewer3` 会继续同步维护，用于兼容旧项目；新项目建议优先使用标准 wrapper 包 `@file-viewer/vue3`。
+组件实例支持 `downloadOriginalFile()`、`printRenderedHtml()`、`exportRenderedHtml()`、`zoomIn()`、`zoomOut()`、`resetZoom()`、`searchDocument()`、`clearDocumentSearch()`、`nextSearchResult()`、`previousSearchResult()`、`collectDocumentAnchors()`、`scrollToAnchor()`、`scrollToLine()` 和 `getDocumentTextChunks()`。历史包名 `@flyfish-group/file-viewer3` 和 `file-viewer3` 会继续同步维护，用于兼容旧项目；新项目建议优先使用标准组件包 `@file-viewer/vue3`。
 
 ## 能力范围
 
-`@file-viewer/vue3` 与纯 Web、Vue2、React、jQuery 和 Svelte wrapper 共享同一套 `@file-viewer/core` 能力，覆盖 PDF、Word、Excel、PPT、OFD、CAD/DWG/DXF/DWF、EPUB/UMD、压缩包、邮件、Markdown、代码高亮、图片、音频、视频、3D 模型、地理数据和结构化数据资产等预览链路。完整格式矩阵和参数说明见官方文档: https://doc.flyfish.dev/guide/formats
+`@file-viewer/vue3` 与纯 Web、Vue2、React、jQuery 和 Svelte standard component package 共享同一套 `@file-viewer/core` 能力，覆盖 PDF、Word、Excel、PPT、OFD、CAD/DWG/DXF/DWF、EPUB/UMD、压缩包、邮件、Markdown、代码高亮、图片、音频、视频、3D 模型、地理数据和结构化数据资产等预览链路。完整格式矩阵和参数说明见官方文档: https://doc.flyfish.dev/guide/formats
 
 English README: [README.en.md](./README.en.md)。
 
 <!-- FILE_VIEWER_GENERATED:START -->
 ## 生态包矩阵
 
-所有标准 wrapper 都只共享 `@file-viewer/core` 这个总底座，不依赖其他 wrapper。core 内部负责格式矩阵、资源解析、browser/renderers、事件、操作 API、搜索、缩放、打印和导出；各框架 wrapper 自己维护本地 controller、组件生命周期、类型出口和生态交互。
+所有标准组件包都只共享 `@file-viewer/core` 这个总底座，不依赖其他框架组件实现。core 内部负责格式矩阵、资源解析、browser/renderers、事件、操作 API、搜索、缩放、打印和导出；各框架组件包自己维护本地 controller、组件生命周期、类型出口和生态交互。
 
 | 框架 | 标准 npm 包 | 入口格式 | GitHub | Gitee | 兼容历史包 |
 | --- | --- | --- | --- | --- | --- |
@@ -58,7 +58,7 @@ English README: [README.en.md](./README.en.md)。
 
 ## 格式支持矩阵
 
-共享 core 当前覆盖 23 条预览链路、194 个扩展名。所有格式都按需异步加载，wrapper 层只做生态适配，不互相嵌套。
+共享 core 当前覆盖 23 条预览链路、194 个扩展名。所有格式都按需异步加载，组件层只做生态适配，不互相嵌套。
 
 | 预览链路 | 分类 | 扩展名 | 能力 | 加载 |
 | --- | --- | --- | --- | --- |
@@ -88,5 +88,5 @@ English README: [README.en.md](./README.en.md)。
 
 完整参数、生命周期 hooks、beforeOperation、主题、水印、搜索、缩放、打印和导出说明见官方文档: https://doc.flyfish.dev/
 
-在线 Demo: https://viewer.flyfish.dev/ 。License: Apache-2.0。二开或商用请保留 Flyfish Viewer 来源说明；如果修复了通用兼容问题，也欢迎贡献回对应 wrapper 仓库。
+在线 Demo: https://viewer.flyfish.dev/ 。License: Apache-2.0。二开或商用请保留 Flyfish Viewer 来源说明；如果修复了通用兼容问题，也欢迎贡献回对应组件仓库。
 <!-- FILE_VIEWER_GENERATED:END -->

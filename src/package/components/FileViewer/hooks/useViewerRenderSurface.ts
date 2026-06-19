@@ -35,7 +35,7 @@ interface UseViewerRenderSurfaceOptions {
 /**
  * FileViewer 组件层的渲染面板门面。
  *
- * 它只管理 Vue wrapper 的 DOM surface、渲染 session 和 export adapter；
+ * 它只管理 Vue component package 的 DOM surface、渲染 session 和 export adapter；
  * 具体格式派发仍由 core registry + Vue renderer bridge 完成。
  */
 export const useViewerRenderSurface = ({

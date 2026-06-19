@@ -1,6 +1,6 @@
 # @file-viewer/vue3
 
-The standard Vue 3 native wrapper for Flyfish File Viewer. It owns the Vue 3 component lifecycle and local controller while consuming the shared `@file-viewer/core` contracts and core browser engine. It exposes plugin install, component props, lifecycle events, search, zoom, print, export, and document-location ref APIs.
+The standard Vue 3 native component package for Flyfish File Viewer. It owns the Vue 3 component lifecycle and local controller while consuming the shared `@file-viewer/core` contracts and core browser engine. It exposes plugin install, component props, lifecycle events, search, zoom, print, export, and document-location ref APIs.
 
 ```bash
 npm install vue @file-viewer/vue3
@@ -32,16 +32,16 @@ createApp(App).use(FileViewer).mount('#app')
 </template>
 ```
 
-The component instance exposes `downloadOriginalFile()`, `printRenderedHtml()`, `exportRenderedHtml()`, `zoomIn()`, `zoomOut()`, `resetZoom()`, `searchDocument()`, `clearDocumentSearch()`, `nextSearchResult()`, `previousSearchResult()`, `collectDocumentAnchors()`, `scrollToAnchor()`, `scrollToLine()`, and `getDocumentTextChunks()`. The historical packages `@flyfish-group/file-viewer3` and `file-viewer3` remain supported for compatibility with existing projects; new integrations should prefer the standard wrapper package `@file-viewer/vue3`.
+The component instance exposes `downloadOriginalFile()`, `printRenderedHtml()`, `exportRenderedHtml()`, `zoomIn()`, `zoomOut()`, `resetZoom()`, `searchDocument()`, `clearDocumentSearch()`, `nextSearchResult()`, `previousSearchResult()`, `collectDocumentAnchors()`, `scrollToAnchor()`, `scrollToLine()`, and `getDocumentTextChunks()`. The historical packages `@flyfish-group/file-viewer3` and `file-viewer3` remain supported for compatibility with existing projects; new integrations should prefer the standard component package package `@file-viewer/vue3`.
 
 ## Capabilities
 
-`@file-viewer/vue3` shares the same `@file-viewer/core` contracts with the Pure Web, Vue 2, React, jQuery, and Svelte wrappers. It supports PDF, Word, Excel, PowerPoint, OFD, CAD/DWG/DXF/DWF, EPUB/UMD, archives, email, Markdown, highlighted code, images, audio, video, 3D models, geospatial files, and structured data assets. See the complete format matrix and option reference at https://doc.flyfish.dev/guide/formats
+`@file-viewer/vue3` shares the same `@file-viewer/core` contracts with the Pure Web, Vue 2, React, jQuery, and Svelte standard component packages. It supports PDF, Word, Excel, PowerPoint, OFD, CAD/DWG/DXF/DWF, EPUB/UMD, archives, email, Markdown, highlighted code, images, audio, video, 3D models, geospatial files, and structured data assets. See the complete format matrix and option reference at https://doc.flyfish.dev/guide/formats
 
 <!-- FILE_VIEWER_GENERATED:START -->
 ## Ecosystem Matrix
 
-Every standard wrapper shares `@file-viewer/core` as the only common foundation, and no wrapper depends on another wrapper. Core owns format metadata, source loading, browser/renderers, events, operation APIs, search, zoom, print, and export; each framework wrapper owns its local controller, component lifecycle, type exports, and ecosystem-specific interaction layer.
+Every standard component package shares `@file-viewer/core` as the only common foundation, and no framework component package depends on another framework implementation. Core owns format metadata, source loading, browser/renderers, events, operation APIs, search, zoom, print, and export; each framework package owns its local controller, component lifecycle, type exports, and ecosystem-specific interaction layer.
 
 | Framework | Standard npm package | Entrypoints | GitHub | Gitee | Historical aliases |
 | --- | --- | --- | --- | --- | --- |
@@ -56,7 +56,7 @@ Every standard wrapper shares `@file-viewer/core` as the only common foundation,
 
 ## Format Support Matrix
 
-The shared core currently covers 23 preview pipelines and 194 file extensions. Renderers stay lazy-loaded, and wrapper packages only adapt their own ecosystem without nesting through another wrapper.
+The shared core currently covers 23 preview pipelines and 194 file extensions. Renderers stay lazy-loaded, and component packages only adapt their own ecosystem without nesting through another framework implementation.
 
 | Preview pipeline | Category | Extensions | Capabilities | Loading |
 | --- | --- | --- | --- | --- |
@@ -86,5 +86,5 @@ The shared core currently covers 23 preview pipelines and 194 file extensions. R
 
 See the official documentation for options, lifecycle hooks, beforeOperation, theme, watermark, search, zoom, print, and export APIs: https://doc.flyfish.dev/
 
-Online demo: https://viewer.flyfish.dev/. License: Apache-2.0. For second development or commercial use, keep clear Flyfish Viewer attribution; shared compatibility fixes are welcome in the matching wrapper repository.
+Online demo: https://viewer.flyfish.dev/. License: Apache-2.0. For second development or commercial use, keep clear Flyfish Viewer attribution; shared compatibility fixes are welcome in the matching component repository.
 <!-- FILE_VIEWER_GENERATED:END -->

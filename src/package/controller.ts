@@ -17,7 +17,9 @@ import {
   type FileViewerEventType,
   type FileViewerFileRef,
   type FileViewerInstance,
+  type FileViewerLifecycleContext,
   type FileViewerOperationAvailability,
+  type FileViewerOperationContext,
   type FileViewerOptions,
   type FileViewerPdfOptions,
   type FileViewerSpreadsheetOptions,
@@ -53,6 +55,25 @@ export type ViewerOptions = FileViewerOptions;
 export type ViewerEventType = FileViewerEventType;
 export type ViewerEvent = FileViewerEvent;
 export type ViewerEventHandler = FileViewerEventHandler;
+export type ViewerLifecycleContext = FileViewerLifecycleContext;
+export type ViewerOperationContext = FileViewerOperationContext;
+
+export interface ViewerState {
+  loading: boolean;
+  ready: boolean;
+  error: unknown | null;
+  lastEvent: ViewerEvent | null;
+  lifecycle: ViewerLifecycleContext | null;
+  availability: FileViewerOperationAvailability | null;
+  search: FileViewerSearchState | null;
+  zoom: FileViewerZoomState | null;
+  location: FileViewerDocumentAnchor | null;
+}
+
+export type ViewerStateListener = (
+  state: ViewerState,
+  event?: ViewerEvent
+) => void;
 
 export interface ViewerMountOptions {
   url?: string;
@@ -64,6 +85,7 @@ export interface ViewerMountOptions {
   size?: number;
   options?: ViewerOptions;
   onEvent?: ViewerEventHandler;
+  onStateChange?: ViewerStateListener;
 }
 
 export interface ViewerSourceInput {
@@ -114,6 +136,10 @@ export interface ViewerController {
   scrollToLine(line: number): Promise<boolean>;
   getDocumentTextChunks(): FileViewerDocumentChunk[];
   getOperationAvailability(): FileViewerOperationAvailability | null;
+  getZoomState(): FileViewerZoomState | null;
+  getSearchState(): FileViewerSearchState | null;
+  getState(): ViewerState;
+  subscribe(listener: ViewerStateListener): () => void;
 }
 
 export type ViewerControllerAccessor = () => ViewerController | null;
@@ -125,6 +151,25 @@ export interface ViewerControllerHandle {
   destroy(): void;
   getController(): ViewerController | null;
   getApi(): FileViewerPublicApi | FileViewerInstance | null;
+  downloadOriginalFile(): Promise<void>;
+  printRenderedHtml(): Promise<void>;
+  exportRenderedHtml(): Promise<void>;
+  zoomIn(): Promise<FileViewerZoomState | null>;
+  zoomOut(): Promise<FileViewerZoomState | null>;
+  resetZoom(): Promise<FileViewerZoomState | null>;
+  searchDocument(query: string): Promise<FileViewerSearchState | null>;
+  clearDocumentSearch(): Promise<FileViewerSearchState | null>;
+  nextSearchResult(): Promise<FileViewerSearchState | null>;
+  previousSearchResult(): Promise<FileViewerSearchState | null>;
+  collectDocumentAnchors(): Promise<FileViewerDocumentAnchor[]>;
+  scrollToAnchor(anchor: FileViewerDocumentAnchor | string): Promise<boolean>;
+  scrollToLine(line: number): Promise<boolean>;
+  getDocumentTextChunks(): FileViewerDocumentChunk[];
+  getOperationAvailability(): FileViewerOperationAvailability | null;
+  getZoomState(): FileViewerZoomState | null;
+  getSearchState(): FileViewerSearchState | null;
+  getState(): ViewerState | null;
+  subscribe(listener: ViewerStateListener): () => void;
 }
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -247,6 +292,63 @@ export const createViewerControllerHandle = (
   getApi() {
     return getController()?.getApi() ?? null;
   },
+  downloadOriginalFile() {
+    return getController()?.downloadOriginalFile() ?? Promise.resolve();
+  },
+  printRenderedHtml() {
+    return getController()?.printRenderedHtml() ?? Promise.resolve();
+  },
+  exportRenderedHtml() {
+    return getController()?.exportRenderedHtml() ?? Promise.resolve();
+  },
+  zoomIn() {
+    return getController()?.zoomIn() ?? Promise.resolve(null);
+  },
+  zoomOut() {
+    return getController()?.zoomOut() ?? Promise.resolve(null);
+  },
+  resetZoom() {
+    return getController()?.resetZoom() ?? Promise.resolve(null);
+  },
+  searchDocument(query) {
+    return getController()?.searchDocument(query) ?? Promise.resolve(null);
+  },
+  clearDocumentSearch() {
+    return getController()?.clearDocumentSearch() ?? Promise.resolve(null);
+  },
+  nextSearchResult() {
+    return getController()?.nextSearchResult() ?? Promise.resolve(null);
+  },
+  previousSearchResult() {
+    return getController()?.previousSearchResult() ?? Promise.resolve(null);
+  },
+  collectDocumentAnchors() {
+    return getController()?.collectDocumentAnchors() ?? Promise.resolve([]);
+  },
+  scrollToAnchor(anchor) {
+    return getController()?.scrollToAnchor(anchor) ?? Promise.resolve(false);
+  },
+  scrollToLine(line) {
+    return getController()?.scrollToLine(line) ?? Promise.resolve(false);
+  },
+  getDocumentTextChunks() {
+    return getController()?.getDocumentTextChunks() ?? [];
+  },
+  getOperationAvailability() {
+    return getController()?.getOperationAvailability() ?? null;
+  },
+  getZoomState() {
+    return getController()?.getZoomState() ?? null;
+  },
+  getSearchState() {
+    return getController()?.getSearchState() ?? null;
+  },
+  getState() {
+    return getController()?.getState() ?? null;
+  },
+  subscribe(listener) {
+    return getController()?.subscribe(listener) ?? (() => {});
+  },
 });
 
 const callApi = async <Result>(
@@ -279,12 +381,64 @@ export const mountViewer = (
     ? toViewerSourceInput(currentOptions)
     : null;
   let abortController: AbortController | null = null;
+  const listeners = new Set<ViewerStateListener>();
+  const state: ViewerState = {
+    loading: false,
+    ready: false,
+    error: null,
+    lastEvent: null,
+    lifecycle: null,
+    availability: null,
+    search: null,
+    zoom: null,
+    location: null,
+  };
+  const snapshotState = (): ViewerState => ({
+    ...state,
+    search: state.search
+      ? { ...state.search, matches: [...state.search.matches] }
+      : null,
+  });
+  const notifyState = (event?: ViewerEvent) => {
+    const snapshot = snapshotState();
+    currentOptions.onStateChange?.(snapshot, event);
+    listeners.forEach(listener => listener(snapshot, event));
+  };
+  const applyViewerEvent = (event: ViewerEvent) => {
+    state.lastEvent = event;
+    if (event.type === 'load-start') {
+      state.loading = true;
+      state.ready = false;
+      state.error = null;
+      state.lifecycle = event.payload;
+    } else if (event.type === 'load-complete') {
+      state.loading = false;
+      state.ready = true;
+      state.lifecycle = event.payload;
+    } else if (event.type === 'unload-start') {
+      state.loading = true;
+      state.ready = false;
+      state.lifecycle = event.payload;
+    } else if (event.type === 'unload-complete') {
+      state.loading = false;
+      state.ready = false;
+      state.lifecycle = event.payload;
+    } else if (event.type === 'operation-availability-change') {
+      state.availability = event.payload;
+    } else if (event.type === 'search-change') {
+      state.search = event.payload;
+    } else if (event.type === 'location-change') {
+      state.location = event.payload;
+    } else if (event.type === 'zoom-change') {
+      state.zoom = event.payload;
+    }
+    currentOptions.onEvent?.(event);
+    notifyState(event);
+  };
   const instance = createViewer(container, {
     registry: coreOptions.registry,
     options: currentOptions.options,
-    onEvent: event => {
-      currentOptions.onEvent?.(event);
-    },
+    onEvent: applyViewerEvent,
   });
 
   const cancel = () => {
@@ -298,6 +452,9 @@ export const mountViewer = (
     abortController = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const controller = abortController;
     try {
+      state.loading = true;
+      state.error = null;
+      notifyState();
       const resolvedSource = await resolveViewerLoadSource(nextSource, {
         fetchFile: coreOptions.fetchFile,
         signal: controller?.signal,
@@ -307,6 +464,10 @@ export const mountViewer = (
       if (isAbortError(error) && controller?.signal.aborted) {
         return null;
       }
+      state.loading = false;
+      state.ready = false;
+      state.error = error;
+      notifyState();
       coreOptions.onError?.(error, nextSource);
       throw error;
     } finally {
@@ -409,6 +570,22 @@ export const mountViewer = (
     },
     getOperationAvailability() {
       return instance.getCapabilities();
+    },
+    getZoomState() {
+      return instance.getZoomState();
+    },
+    getSearchState() {
+      return instance.getSearchState();
+    },
+    getState() {
+      return snapshotState();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      listener(snapshotState());
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 

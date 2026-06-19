@@ -21,7 +21,7 @@ const renderUnsupported = async (target: HTMLDivElement, type: string): Promise<
 /**
  * 压缩包内文件和邮件附件的嵌套预览入口。
  *
- * 主预览器和附件预览共享 core dispatcher。Vue3 wrapper 不再持有格式专属
+ * 主预览器和附件预览共享 core dispatcher。Vue3 标准组件包 不再持有格式专属
  * vendor，所有类型统一交给 framework-neutral core renderer。
  */
 export const renderNestedBuffer = async (
