@@ -1,0 +1,75 @@
+{
+  "name": "@file-viewer/vue3",
+  "version": "2.0.0",
+  "private": false,
+  "type": "module",
+  "packageManager": "pnpm@11.0.9",
+  "description": "Standard Vue 3 package for Flyfish File Viewer",
+  "keywords": [
+    "file-viewer",
+    "document-preview",
+    "vue3",
+    "office-preview",
+    "pdf-viewer"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "author": {
+    "name": "Wangyu",
+    "email": "wybaby168@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flyfish-dev/file-viewer-vue3.git"
+  },
+  "homepage": "https://github.com/flyfish-dev/file-viewer-vue3",
+  "bugs": {
+    "url": "https://github.com/flyfish-dev/file-viewer-vue3/issues"
+  },
+  "scripts": {
+    "build": "vite build --mode lib && node scripts/build.mjs",
+    "type-check": "vue-tsc --noEmit",
+    "prepublishOnly": "pnpm type-check && pnpm build"
+  },
+  "main": "./dist/index.mjs",
+  "browser": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/src/package/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./dist/file-viewer3.css": "./dist/file-viewer3.css",
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "types": "dist/src/package/index.d.ts",
+  "dependencies": {
+    "@file-viewer/core": "^2.0.0",
+    "@lucide/vue": "^1.17.0",
+    "vue": "^3.5.35"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "@vue/language-core": "^3.3.4",
+    "@vue/tsconfig": "^0.9.1",
+    "sass": "^1.100.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vite-plugin-dts": "^5.0.2",
+    "vue-tsc": "^3.3.4"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "license": "Apache-2.0"
+}

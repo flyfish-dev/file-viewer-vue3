@@ -1,0 +1,182 @@
+import type { Ref } from 'vue'
+import {
+  createFileViewerPreviewStateTarget,
+  createFileViewerSourceLoadingActionHandlers,
+} from '@file-viewer/core'
+import type { FileViewerErrorMessageFormatter, FileViewerRequestController } from '@file-viewer/core'
+import type {
+  FileViewerFileRef as FileRef,
+  FileViewerLifecycleContext,
+  FileViewerLoadStartState,
+  FileViewerOptions,
+  FileViewerRenderCompleteState
+} from '@file-viewer/core'
+import type { FileViewerVueRenderSession } from '../rendererBridge'
+
+interface UseViewerSourceLoadingOptions {
+  getFile: () => FileRef | undefined;
+  getUrl: () => string | undefined;
+  getOptions: () => FileViewerOptions | undefined;
+  filename: Ref<string>;
+  currentFile: Ref<File | null>;
+  currentBuffer: Ref<ArrayBuffer | null>;
+  currentSourceUrl: Ref<string | null>;
+  renderedReady: Ref<boolean>;
+  progressiveReady: Ref<boolean>;
+  requestController: FileViewerRequestController;
+  clearRenderedContent: (reason?: FileViewerLifecycleContext['reason']) => void;
+  mountRenderedContent: (
+    buffer: ArrayBuffer,
+    file: File,
+    version: number,
+    sourceUrl?: string,
+    streamUrl?: string
+  ) => Promise<FileViewerVueRenderSession | undefined>;
+  destroyRenderSession: (session?: FileViewerVueRenderSession | null) => void;
+  setActiveRenderSession: (session: FileViewerVueRenderSession | null) => void;
+  buildLoadStartState: (input: {
+    version: number;
+    source: FileViewerLifecycleContext['source'];
+    file?: File | null;
+    sourceUrl?: string | null;
+  }) => FileViewerLoadStartState;
+  buildRenderCompleteState: (input: {
+    version: number;
+    source: FileViewerLifecycleContext['source'];
+    file?: File | null;
+    sourceUrl?: string | null;
+  }) => FileViewerRenderCompleteState;
+  notifyLifecycle: (context: FileViewerLifecycleContext) => void;
+  setActiveDocumentContext: (context: FileViewerLifecycleContext) => void;
+  markLoadStarted: (version: number) => void;
+  clearLoadStarted: (version: number) => void;
+  startLoading: (message: string) => void;
+  setLoadingMessage: (message: string) => void;
+  stopLoading: () => void;
+  showError: (message: string) => void;
+  clearError: () => void;
+  resetLoading: () => void;
+  formatErrorMessage: FileViewerErrorMessageFormatter;
+}
+
+/**
+ * FileViewer 组件层的来源加载门面。
+ *
+ * 请求版本、取消错误、文件包装、PDF URL 流式判断等通用能力来自
+ * `@file-viewer/core`；这里只把 Vue 状态、加载态和渲染挂载回调串起来。
+ */
+export const useViewerSourceLoading = ({
+  getFile,
+  getUrl,
+  getOptions,
+  filename,
+  currentFile,
+  currentBuffer,
+  currentSourceUrl,
+  renderedReady,
+  progressiveReady,
+  requestController,
+  clearRenderedContent,
+  mountRenderedContent,
+  destroyRenderSession,
+  setActiveRenderSession,
+  buildLoadStartState,
+  buildRenderCompleteState,
+  notifyLifecycle,
+  setActiveDocumentContext,
+  markLoadStarted,
+  clearLoadStarted,
+  startLoading,
+  setLoadingMessage,
+  stopLoading,
+  showError,
+  clearError,
+  resetLoading,
+  formatErrorMessage
+}: UseViewerSourceLoadingOptions) => {
+  const previewStateTarget = createFileViewerPreviewStateTarget({
+    filename: {
+      get: () => filename.value,
+      set: value => {
+        filename.value = value
+      }
+    },
+    file: {
+      get: () => currentFile.value,
+      set: value => {
+        currentFile.value = value
+      }
+    },
+    buffer: {
+      get: () => currentBuffer.value,
+      set: value => {
+        currentBuffer.value = value
+      }
+    },
+    sourceUrl: {
+      get: () => currentSourceUrl.value,
+      set: value => {
+        currentSourceUrl.value = value
+      }
+    },
+    renderedReady: {
+      get: () => renderedReady.value,
+      set: value => {
+        renderedReady.value = value
+      }
+    },
+    progressiveReady: {
+      get: () => progressiveReady.value,
+      set: value => {
+        progressiveReady.value = value
+      }
+    }
+  })
+
+  const actions = createFileViewerSourceLoadingActionHandlers<FileViewerVueRenderSession>({
+    getFile,
+    getUrl,
+    getCurrentFilename: () => filename.value,
+    getPdfStreaming: () => getOptions()?.pdf?.streaming,
+    getPageHref: () => window.location.href,
+    previewTarget: previewStateTarget,
+    requestController,
+    downloadFile: async ({ url: downloadUrl, signal }) => {
+      const response = await fetch(downloadUrl, { signal })
+      if (!response.ok) {
+        throw new Error(`文件下载失败: HTTP ${response.status}`)
+      }
+      return response.blob()
+    },
+    mountRenderedContent,
+    destroyRenderSession,
+    buildLoadStartState,
+    buildRenderCompleteState,
+    onMarkLoadStarted: markLoadStarted,
+    onClearLoadStarted: clearLoadStarted,
+    onStartLoading: startLoading,
+    onSetLoadingMessage: setLoadingMessage,
+    onStopLoading: stopLoading,
+    onShowError: showError,
+    onClearError: clearError,
+    onResetLoading: resetLoading,
+    onClearRenderedContent: clearRenderedContent,
+    onSession: setActiveRenderSession,
+    onActiveDocumentContext: setActiveDocumentContext,
+    onLifecycle: notifyLifecycle,
+    formatErrorMessage
+  })
+
+  return {
+    ...actions,
+    cancelPreview: (reason: FileViewerLifecycleContext['reason'] = 'component-unmount') => {
+      actions.cancelPreview(reason)
+    },
+    refreshPreview: async () => {
+      await actions.refreshPreview()
+    },
+    resetViewer: (reason?: FileViewerLifecycleContext['reason']) => {
+      actions.resetViewer(reason)
+    }
+  }
+}

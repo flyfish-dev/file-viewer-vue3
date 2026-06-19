@@ -1,0 +1,789 @@
+<script setup lang='ts'>
+import { ref } from 'vue'
+import { RotateCcw, ZoomIn, ZoomOut } from '@lucide/vue'
+import {
+  createFileViewerRequestScope,
+  reportFileViewerLifecycleHookError,
+  reportFileViewerOperationError
+} from '@file-viewer/core'
+import type {
+  FileViewerComponentEmits as FileViewerEmits,
+  FileViewerComponentProps as FileViewerProps
+} from '@file-viewer/core'
+import { useLoading } from './hooks/useLoading'
+import { useViewerDocumentFeatures } from './hooks/useViewerDocumentFeatures'
+import { useViewerExport } from './hooks/useViewerExport'
+import { useViewerLifecycle } from './hooks/useViewerLifecycle'
+import { useViewerErrorState, useViewerPresentation } from './hooks/useViewerPresentation'
+import { useViewerPreviewLifecycle } from './hooks/useViewerPreviewLifecycle'
+import { useViewerPublicApi } from './hooks/useViewerPublicApi'
+import { useViewerRenderSurface } from './hooks/useViewerRenderSurface'
+import { useViewerSourceLoading } from './hooks/useViewerSourceLoading'
+import { useViewerToolbar } from './hooks/useViewerToolbar'
+import { useViewerWatermark } from './hooks/useViewerWatermark'
+import { useViewerZoom } from './hooks/useViewerZoom'
+
+const props = defineProps<FileViewerProps>()
+
+const emit = defineEmits<FileViewerEmits>()
+
+const filename = ref('')
+const output = ref<HTMLDivElement | null>(null)
+const currentFile = ref<File | null>(null)
+const currentBuffer = ref<ArrayBuffer | null>(null)
+const currentSourceUrl = ref<string | null>(null)
+const {
+  refreshDocumentIndex,
+  clearDocumentState,
+  getScrollContainer,
+  searchDocument,
+  clearDocumentSearch,
+  nextSearchResult,
+  previousSearchResult,
+  getSearchState,
+  collectDocumentAnchors,
+  scrollToAnchor,
+  scrollToLine,
+  getDocumentTextChunks
+} = useViewerDocumentFeatures({
+  output,
+  getOptions: () => props.options,
+  emitSearchChange: state => emit('search-change', state),
+  emitLocationChange: anchor => emit('location-change', anchor)
+})
+
+const {
+  displayFilename,
+  currentExtend,
+  normalizedToolbar,
+  viewerTheme,
+  formatErrorMessage
+} = useViewerPresentation({
+  filename,
+  getFile: () => props.file,
+  getUrl: () => props.url,
+  getOptions: () => props.options
+})
+
+const {
+  watermarkStyle,
+  watermarkInlineStyle
+} = useViewerWatermark(() => props.options?.watermark)
+
+const {
+  loading,
+  error,
+  message,
+  theme: loadingTheme,
+  styleVars: loadingVars,
+  startLoading,
+  setLoadingMessage,
+  stopLoading,
+  showError,
+  clearError,
+  resetLoading
+} = useLoading(currentExtend)
+
+const errorState = useViewerErrorState({
+  currentExtend,
+  error,
+  loadingTheme
+})
+
+const {
+  requestController,
+  getCurrentVersion,
+  isCurrentRequest
+} = createFileViewerRequestScope()
+
+const {
+  markLoadStarted,
+  clearLoadStarted,
+  notifyLifecycle,
+  notifyActiveUnloadStart,
+  notifyActiveUnloadComplete,
+  setActiveDocumentContext,
+  clearActiveDocumentContext,
+  buildLoadStartState,
+  buildRenderCompleteState,
+  runBeforeOperation
+} = useViewerLifecycle({
+  getOptions: () => props.options,
+  getFilename: () => filename.value,
+  getBufferSize: () => currentBuffer.value?.byteLength,
+  getCurrentFile: () => currentFile.value,
+  getCurrentVersion,
+  getFallbackFile: () => props.file,
+  getFallbackUrl: () => props.url,
+  emitLifecycle: emit,
+  emitOperationBefore: context => emit('operation-before', context),
+  emitOperationCancel: context => emit('operation-cancel', context),
+  formatErrorMessage,
+  handleLifecycleError: (nextError, context) => {
+    reportFileViewerLifecycleHookError({ error: nextError, context })
+  },
+  handleOperationError: (nextError, context) => {
+    reportFileViewerOperationError({ error: nextError, context })
+  },
+  onOperationErrorMessage: showError
+})
+
+const {
+  zoomState,
+  refreshZoomProvider,
+  startZoomObserver,
+  stopZoomObserver,
+  clearZoomProvider,
+  zoomIn,
+  zoomOut,
+  resetZoom,
+  getZoomState
+} = useViewerZoom({
+  output,
+  enabled: () => true,
+  runBeforeOperation
+})
+
+const {
+  activeExportAdapter,
+  renderedReady,
+  progressiveReady,
+  clearRenderedContent,
+  destroyRenderSession,
+  mountRenderedContent,
+  setActiveRenderSession
+} = useViewerRenderSurface({
+  output,
+  getOptions: () => props.options,
+  isCurrentRequest,
+  notifyActiveUnloadStart,
+  notifyActiveUnloadComplete,
+  clearActiveDocumentContext,
+  clearDocumentState,
+  refreshDocumentIndex,
+  startZoomObserver,
+  stopZoomObserver,
+  clearZoomProvider,
+  refreshZoomProvider
+})
+
+const {
+  operationAvailability,
+  visibleToolbar,
+  showToolbar,
+  toolbarPosition,
+  toolbarDisabled,
+  zoomButtonDisabled
+} = useViewerToolbar({
+  activeExportAdapter,
+  currentBuffer,
+  currentExtend,
+  currentFile,
+  currentSourceUrl,
+  error,
+  getOptions: () => props.options,
+  getZoomState,
+  loading,
+  normalizedToolbar,
+  renderedReady,
+  zoomState,
+  emitOperationAvailabilityChange: availability => emit('operation-availability-change', availability),
+  emitZoomChange: state => emit('zoom-change', state)
+})
+
+const {
+  cancelPreview,
+  refreshPreview
+} = useViewerSourceLoading({
+  getFile: () => props.file,
+  getUrl: () => props.url,
+  getOptions: () => props.options,
+  filename,
+  currentFile,
+  currentBuffer,
+  currentSourceUrl,
+  renderedReady,
+  progressiveReady,
+  requestController,
+  clearRenderedContent,
+  mountRenderedContent,
+  destroyRenderSession,
+  setActiveRenderSession,
+  buildLoadStartState,
+  buildRenderCompleteState,
+  notifyLifecycle,
+  setActiveDocumentContext,
+  markLoadStarted,
+  clearLoadStarted,
+  startLoading,
+  setLoadingMessage,
+  stopLoading,
+  showError,
+  clearError,
+  resetLoading,
+  formatErrorMessage
+})
+
+const {
+  downloadOriginalFile,
+  exportRenderedHtml,
+  printRenderedHtml
+} = useViewerExport({
+  activeExportAdapter,
+  currentBuffer,
+  currentFile,
+  currentSourceUrl,
+  displayFilename,
+  formatErrorMessage,
+  operationAvailability,
+  output,
+  runBeforeOperation,
+  showError,
+  watermarkInlineStyle
+})
+
+const publicApi = useViewerPublicApi({
+  downloadOriginalFile,
+  printRenderedHtml,
+  exportRenderedHtml,
+  zoomIn,
+  zoomOut,
+  resetZoom,
+  getZoomState,
+  operationAvailability,
+  getScrollContainer,
+  searchDocument,
+  clearDocumentSearch,
+  nextSearchResult,
+  previousSearchResult,
+  getSearchState,
+  collectDocumentAnchors,
+  scrollToAnchor,
+  scrollToLine,
+  getDocumentTextChunks
+})
+
+defineExpose(publicApi)
+
+useViewerPreviewLifecycle({
+  getFile: () => props.file,
+  getUrl: () => props.url,
+  refreshPreview,
+  cancelPreview,
+  resetLoading,
+  stopZoomObserver
+})
+</script>
+
+<template>
+  <div class='file-viewer' :data-viewer-theme='viewerTheme' :style='loadingVars'>
+    <div class='viewer-stage'>
+      <div
+        v-if='showToolbar'
+        class='viewer-actions'
+        :class='{ "viewer-actions--floating": toolbarPosition === "bottom-right" }'
+        :data-toolbar-position='toolbarPosition'
+      >
+        <div v-if='visibleToolbar.zoom' class='viewer-actions-group viewer-zoom-actions' aria-label='缩放控制'>
+          <button
+            type='button'
+            class='viewer-icon-button'
+            :disabled='zoomButtonDisabled("canZoomOut")'
+            title='缩小预览'
+            aria-label='缩小预览'
+            @click='zoomOut'
+          >
+            <ZoomOut :size='15' :stroke-width='2.4' />
+          </button>
+          <button
+            type='button'
+            class='viewer-zoom-meter'
+            :disabled='zoomButtonDisabled("canReset")'
+            title='还原比例'
+            @click='resetZoom'
+          >
+            {{ zoomState.label }}
+          </button>
+          <button
+            type='button'
+            class='viewer-icon-button'
+            :disabled='zoomButtonDisabled("canZoomIn")'
+            title='放大预览'
+            aria-label='放大预览'
+            @click='zoomIn'
+          >
+            <ZoomIn :size='15' :stroke-width='2.4' />
+          </button>
+          <button
+            type='button'
+            class='viewer-icon-button'
+            :disabled='zoomButtonDisabled("canReset")'
+            title='还原比例'
+            aria-label='还原比例'
+            @click='resetZoom'
+          >
+            <RotateCcw :size='14' :stroke-width='2.4' />
+          </button>
+        </div>
+        <button
+          v-if='visibleToolbar.download'
+          type='button'
+          :disabled='toolbarDisabled'
+          title='下载原始文件'
+          @click='downloadOriginalFile'
+        >
+          下载
+        </button>
+        <button
+          v-if='visibleToolbar.print'
+          type='button'
+          :disabled='toolbarDisabled'
+          title='打印完整渲染内容'
+          @click='printRenderedHtml'
+        >
+          打印
+        </button>
+        <button
+          v-if='visibleToolbar.exportHtml'
+          type='button'
+          :disabled='toolbarDisabled'
+          title='导出当前渲染后的 HTML'
+          @click='exportRenderedHtml'
+        >
+          HTML
+        </button>
+      </div>
+      <div class='viewer-content-shell'>
+        <div ref='output' class='content' data-viewer-scroll-root='true' :class='{ hidden: (loading && !progressiveReady) || !!error }' />
+        <div v-if='watermarkStyle' class='viewer-watermark' :style='watermarkStyle' />
+
+        <div v-if='loading && !progressiveReady' class='state-panel loading-panel'>
+          <div class='loading-card'>
+            <div class='loading-icon'>{{ loadingTheme.badge }}</div>
+            <div class='loading-copy'>
+              <span class='loading-kicker'>{{ loadingTheme.label }}</span>
+              <strong>{{ message }}</strong>
+              <p>{{ loadingTheme.hint }}</p>
+            </div>
+            <span class='loading-ring' />
+          </div>
+        </div>
+
+        <div v-else-if='error' class='state-panel error-panel'>
+          <div class='error-card'>
+            <strong>{{ errorState.title }}</strong>
+            <p>{{ errorState.message }}</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.file-viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  color-scheme: light;
+}
+
+.file-viewer[data-viewer-theme='dark'] {
+  background: #0f171d;
+  color-scheme: dark;
+}
+
+.viewer-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.viewer-actions {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 45px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(20, 35, 53, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.viewer-actions--floating {
+  position: absolute;
+  z-index: 30;
+  right: calc(16px + env(safe-area-inset-right, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  min-height: 42px;
+  padding: 6px;
+  border: 1px solid rgba(20, 35, 53, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.viewer-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(20, 35, 53, 0.08);
+  border-radius: 999px;
+  background: rgba(20, 35, 53, 0.035);
+}
+
+.viewer-actions button {
+  min-width: 42px;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #40546a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.viewer-actions .viewer-icon-button {
+  width: 30px;
+  min-width: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-actions .viewer-zoom-meter {
+  min-width: 48px;
+  padding: 0 8px;
+  color: #23465e;
+}
+
+.viewer-actions--floating button {
+  min-width: 48px;
+  height: 32px;
+  border-radius: 999px;
+}
+
+.viewer-actions--floating .viewer-icon-button {
+  width: 32px;
+  min-width: 32px;
+}
+
+.viewer-actions--floating .viewer-zoom-meter {
+  min-width: 54px;
+}
+
+.viewer-actions button:hover:not(:disabled) {
+  background: rgba(33, 163, 102, 0.1);
+  color: #16774c;
+}
+
+.viewer-actions button:disabled {
+  color: #aab5c0;
+  cursor: not-allowed;
+}
+
+.viewer-content-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: #f2f2f2;
+}
+
+.content.hidden {
+  visibility: hidden;
+}
+
+:global(.flyfish-search-match) {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: rgba(255, 214, 102, 0.72);
+  color: inherit;
+  box-shadow: 0 0 0 1px rgba(185, 128, 0, 0.14);
+}
+
+:global(.flyfish-search-match--active) {
+  background: rgba(47, 191, 122, 0.82);
+  box-shadow: 0 0 0 2px rgba(30, 132, 83, 0.24);
+}
+
+.viewer-watermark {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+
+.state-panel {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 248, 249, 0.98));
+}
+
+.loading-card,
+.error-card {
+  width: min(100%, 460px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(19, 36, 55, 0.06);
+  box-shadow: 0 18px 42px rgba(15, 31, 47, 0.12);
+}
+
+.loading-icon {
+  flex-shrink: 0;
+  min-width: 70px;
+  height: 70px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--viewer-accent) 0%, var(--viewer-accent) 100%);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 14px 30px rgba(17, 28, 40, 0.14);
+}
+
+.loading-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.loading-kicker {
+  display: block;
+  color: var(--viewer-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loading-copy strong,
+.error-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #16283b;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.loading-copy p,
+.error-card p {
+  margin: 8px 0 0;
+  color: #6a7d90;
+  line-height: 1.6;
+}
+
+.loading-ring {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 3px solid var(--viewer-soft);
+  border-top-color: var(--viewer-accent);
+  animation: viewer-spin 0.9s linear infinite;
+}
+
+.error-card {
+  display: block;
+  text-align: center;
+}
+
+.error-card strong {
+  color: #b42318;
+}
+
+.file-viewer[data-viewer-theme='dark'] .viewer-actions--floating {
+  border-color: rgba(167, 185, 198, 0.16);
+  background: rgba(14, 22, 28, 0.94);
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+}
+
+.file-viewer[data-viewer-theme='dark'] .viewer-actions {
+  border-bottom-color: rgba(167, 185, 198, 0.12);
+  background: rgba(14, 22, 28, 0.94);
+}
+
+.file-viewer[data-viewer-theme='dark'] .viewer-actions button {
+  color: #b8c7d5;
+}
+
+.file-viewer[data-viewer-theme='dark'] .viewer-actions-group {
+  border-color: rgba(167, 185, 198, 0.13);
+  background: rgba(167, 185, 198, 0.08);
+}
+
+.file-viewer[data-viewer-theme='dark'] .viewer-actions button:hover:not(:disabled) {
+  background: rgba(45, 212, 154, 0.14);
+  color: #5ee0ae;
+}
+
+.file-viewer[data-viewer-theme='dark'] .viewer-actions button:disabled {
+  color: #667888;
+}
+
+.file-viewer[data-viewer-theme='dark'] .content {
+  background: #141c23;
+}
+
+.file-viewer[data-viewer-theme='dark'] .state-panel {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 30, 0.92), rgba(11, 17, 22, 0.98));
+}
+
+.file-viewer[data-viewer-theme='dark'] .loading-card,
+.file-viewer[data-viewer-theme='dark'] .error-card {
+  background: rgba(19, 29, 37, 0.94);
+  border-color: rgba(139, 161, 177, 0.16);
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.34);
+}
+
+.file-viewer[data-viewer-theme='dark'] .loading-copy strong,
+.file-viewer[data-viewer-theme='dark'] .error-card strong {
+  color: #eff7fb;
+}
+
+.file-viewer[data-viewer-theme='dark'] .loading-copy p,
+.file-viewer[data-viewer-theme='dark'] .error-card p {
+  color: #9eb0bf;
+}
+
+.file-viewer[data-viewer-theme='dark'] .error-card strong {
+  color: #ff9c91;
+}
+
+@keyframes viewer-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .file-viewer[data-viewer-theme='system'] {
+    background: #0f171d;
+    color-scheme: dark;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .viewer-actions--floating {
+    border-color: rgba(167, 185, 198, 0.16);
+    background: rgba(14, 22, 28, 0.94);
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+  }
+
+  .file-viewer[data-viewer-theme='system'] .viewer-actions {
+    border-bottom-color: rgba(167, 185, 198, 0.12);
+    background: rgba(14, 22, 28, 0.94);
+  }
+
+  .file-viewer[data-viewer-theme='system'] .viewer-actions button {
+    color: #b8c7d5;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .viewer-actions-group {
+    border-color: rgba(167, 185, 198, 0.13);
+    background: rgba(167, 185, 198, 0.08);
+  }
+
+  .file-viewer[data-viewer-theme='system'] .viewer-actions button:hover:not(:disabled) {
+    background: rgba(45, 212, 154, 0.14);
+    color: #5ee0ae;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .viewer-actions button:disabled {
+    color: #667888;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .content {
+    background: #141c23;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .state-panel {
+    background:
+      linear-gradient(180deg, rgba(15, 23, 30, 0.92), rgba(11, 17, 22, 0.98));
+  }
+
+  .file-viewer[data-viewer-theme='system'] .loading-card,
+  .file-viewer[data-viewer-theme='system'] .error-card {
+    background: rgba(19, 29, 37, 0.94);
+    border-color: rgba(139, 161, 177, 0.16);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.34);
+  }
+
+  .file-viewer[data-viewer-theme='system'] .loading-copy strong,
+  .file-viewer[data-viewer-theme='system'] .error-card strong {
+    color: #eff7fb;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .loading-copy p,
+  .file-viewer[data-viewer-theme='system'] .error-card p {
+    color: #9eb0bf;
+  }
+
+  .file-viewer[data-viewer-theme='system'] .error-card strong {
+    color: #ff9c91;
+  }
+}
+
+@media (max-width: 767px) {
+  .viewer-actions--floating {
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100% - 20px);
+    gap: 4px;
+    padding: 5px;
+    overflow-x: auto;
+  }
+
+  .viewer-actions--floating button {
+    min-width: 40px;
+    height: 30px;
+    padding: 0 9px;
+  }
+}
+</style>
+
+<style>
+.file-render {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+</style>
