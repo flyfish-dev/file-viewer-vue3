@@ -84,6 +84,76 @@ The shared core currently covers 23 preview pipelines and 194 file extensions. R
 | Audio | media | `.mp3`, `.mpeg`, `.wav`, `.ogg`, `.oga`, `.opus`, `.m4a`, `.aac`, `.flac`, `.weba`, `.midi`, `.mid` | download | lazy async |
 | Data Asset | asset | `.ttf`, `.otf`, `.woff`, `.woff2`, `.psd`, `.ai`, `.eps`, `.sqlite`, `.wasm`, `.parquet`, `.avro`, `.webarchive` | download, HTML export, search | lazy async |
 
+## Shared Options And Events
+
+Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOptions` semantics, mapped to framework-native props, events, refs, actions, or plugin APIs.
+
+| Option | Description |
+| --- | --- |
+| `url` | Remote file URL for CDN, object storage, or business API file links. |
+| `file` | `File`, `Blob`, or `ArrayBuffer` for uploads, local selection, or already-fetched binary data. |
+| `buffer` | Direct `ArrayBuffer` input after custom download, authorization, or decryption. |
+| `name` / `filename` | Display name and extension hint. Pass it explicitly when the URL has no useful extension. |
+| `type` | Explicit extension or MIME hint that overrides automatic detection. |
+| `size` | File size hint used in lifecycle context, loading states, and safety limits. |
+| `options` | The shared `FileViewerOptions` surface. Every component package keeps the same semantics. |
+| `onEvent` / `onStateChange` | Unified event and state subscriptions for imperative wrappers such as Pure Web, React, and Svelte. Vue maps the same events to native emits. |
+
+| Options Field | Description |
+| --- | --- |
+| `theme` | `light`, `dark`, or `system`. This takes precedence over browser `prefers-color-scheme`. |
+| `watermark` | Text or image watermark with opacity, rotation, gap, size, font, and color controls. |
+| `toolbar` | Controls download, print, HTML export, zoom, toolbar position, and operation-level preflight checks. |
+| `search` | Document search, highlight class names, case sensitivity, whole-word matching, max matches, and debounce. |
+| `ai` | Text collection, chunk size, and max text length for provenance, location, vectorization, and external AI workflows. |
+| `archive` | Archive Worker/WASM URLs, timeout, cache, archive limits, and nested entry preview limits. |
+| `pdf` | PDF.js worker, navigation pane, outline, rotation, streaming, range chunk size, and credentials. |
+| `docx` / `spreadsheet` | Office workers, progressive rendering, and spreadsheet worker settings for large documents. |
+| `typst` / `data` / `cad` | Typst, SQLite, CAD/DWG/DXF/DWF WASM, worker, encoding, and rendering strategy options. |
+| `hooks` / `beforeOperation` | Shared lifecycle hooks and operation preflight checks for audit, permission, telemetry, and safety controls. |
+
+## Lifecycle And Operation Events
+
+| Event / hook | Description |
+| --- | --- |
+| `load-start` / `hooks.onLoadStart` | Fires when parsing or downloading starts. Context includes filename, type, source, version, URL, File, and size. |
+| `load-complete` / `hooks.onLoadComplete` | Fires when the current document has rendered. Context includes duration, source data, and version. |
+| `unload-start` / `hooks.onUnloadStart` | Fires before replace, reset, or component unmount so external state or resources can be saved. |
+| `unload-complete` / `hooks.onUnloadComplete` | Fires after the previous document is released. The reason is `replace`, `reset`, or `component-unmount`. |
+| `operation-before` / `operation-cancel` | Fires around download, print, HTML export, and zoom actions. Returning `false` from `beforeOperation` cancels the action. |
+| `operation-availability-change` | Fires when download, print, HTML export, or zoom support changes for the active format. |
+| `search-change` / `location-change` / `zoom-change` | Fires when search matches, document anchors, or zoom state changes so host UIs can stay in sync. |
+
+## Public Operation API
+
+| API | Description |
+| --- | --- |
+| `load` / `update` / `reload` / `destroy` | Imperatively load, update, reload, and destroy the viewer. |
+| `downloadOriginalFile()` | Downloads the original file while respecting toolbar and `beforeOperation` checks. |
+| `printRenderedHtml()` | Prints the complete rendered document using the best available per-format print adapter. |
+| `exportRenderedHtml()` | Exports rendered HTML for archiving, audit, or offline review. |
+| `zoomIn()` / `zoomOut()` / `resetZoom()` | Uses the active renderer zoom provider instead of outer CSS transforms that can break coordinates. |
+| `searchDocument()` / `nextSearchResult()` / `previousSearchResult()` | Runs document-level search and navigates highlighted matches. |
+| `collectDocumentAnchors()` / `scrollToAnchor()` / `scrollToLine()` | Collects pages, outline items, headings, or code-line anchors and scrolls to them. |
+| `getDocumentTextChunks()` | Returns structured text chunks for search, AI provenance, vectorization, and external indexes. |
+| `getOperationAvailability()` / `getZoomState()` / `getSearchState()` | Reads current capability, zoom, and search state for custom toolbars. |
+
+## Workers, WASM, And Private Deployment
+
+| Asset | Description |
+| --- | --- |
+| Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
+| CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
+| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.docx.workerUrl`, and `options.spreadsheet.workerUrl`; large files can use workers and progressive rendering. |
+| Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed. |
+| Deployment principle | Heavy workers, WASM files, and parser libraries stay lazy-loaded and are only requested when the active file type needs them. |
+
+## Quality Gates
+
+- Component packages only depend on `@file-viewer/core` and their own ecosystem dependencies. They do not nest through another framework component package.
+- Format parsing, search, zoom, print, export, watermark, lifecycle, and beforeOperation semantics all come from the same core.
+- Releases should pass type checks, component API verification, README generation checks, format-matrix verification, standalone repository export, and browser smoke tests.
+
 See the official documentation for options, lifecycle hooks, beforeOperation, theme, watermark, search, zoom, print, and export APIs: https://doc.flyfish.dev/
 
 Online demo: https://viewer.flyfish.dev/. License: Apache-2.0. For second development or commercial use, keep clear Flyfish Viewer attribution; shared compatibility fixes are welcome in the matching component repository.
