@@ -36,7 +36,7 @@ The component instance exposes `downloadOriginalFile()`, `printRenderedHtml()`, 
 
 ## Capabilities
 
-`@file-viewer/vue3` shares the same `@file-viewer/core` contracts with the Pure Web, Vue 2, React, jQuery, and Svelte standard component packages. It supports PDF, Word, Excel, PowerPoint, OFD, CAD/DWG/DXF/DWF, EPUB/UMD, archives, email, Markdown, highlighted code, images, audio, video, 3D models, geospatial files, and structured data assets. See the complete format matrix and option reference at https://doc.flyfish.dev/guide/formats
+`@file-viewer/vue3` shares the same `@file-viewer/core` contracts with the Pure Web, Vue 2, React, jQuery, and Svelte standard component packages. It supports PDF, Word, Excel, PowerPoint, OFD, CAD/DWG/DXF/DWF, EPUB/UMD, archives, email, Markdown, highlighted code, images, audio, video, 3D models, geospatial files, and structured data assets. See the complete format matrix and option reference at https://doc.file-viewer.app/guide/formats
 
 <!-- FILE_VIEWER_GENERATED:START -->
 ## Ecosystem Matrix
@@ -108,7 +108,7 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 | `ai` | Text collection, chunk size, and max text length for provenance, location, vectorization, and external AI workflows. |
 | `archive` | Archive Worker/WASM URLs, timeout, cache, archive limits, and nested entry preview limits. |
 | `pdf` | PDF.js worker, navigation pane, outline, rotation, streaming, range chunk size, and credentials. |
-| `docx` / `spreadsheet` | Office workers, progressive rendering, and spreadsheet worker settings for large documents. |
+| `docx` / `spreadsheet` | DOCX and Spreadsheet default to fidelity-first main-thread rendering; Worker/progressive paths are explicit opt-in. |
 | `typst` / `data` / `cad` | Typst, SQLite, CAD/DWG/DXF/DWF WASM, worker, encoding, and rendering strategy options. |
 | `hooks` / `beforeOperation` | Shared lifecycle hooks and operation preflight checks for audit, permission, telemetry, and safety controls. |
 
@@ -144,7 +144,7 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 | --- | --- |
 | Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
 | CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
-| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.docx.workerUrl`, and `options.spreadsheet.workerUrl`; large files can use workers and progressive rendering. |
+| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.docx.workerUrl`, and `options.spreadsheet.workerUrl`; DOCX and Excel Workers are explicit opt-in to avoid local-server, mobile WebView, MIME/CSP, or complex-style issues. |
 | Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed. |
 | Deployment principle | Heavy workers, WASM files, and parser libraries stay lazy-loaded and are only requested when the active file type needs them. |
 
@@ -154,7 +154,7 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 - Format parsing, search, zoom, print, export, watermark, lifecycle, and beforeOperation semantics all come from the same core.
 - Releases should pass type checks, component API verification, README generation checks, format-matrix verification, standalone repository export, and browser smoke tests.
 
-See the official documentation for options, lifecycle hooks, beforeOperation, theme, watermark, search, zoom, print, and export APIs: https://doc.flyfish.dev/
+See the official documentation for options, lifecycle hooks, beforeOperation, theme, watermark, search, zoom, print, and export APIs: https://doc.file-viewer.app/
 
-Online demo: https://viewer.flyfish.dev/. License: Apache-2.0. For second development or commercial use, keep clear Flyfish Viewer attribution; shared compatibility fixes are welcome in the matching component repository.
+Online demo: https://demo.file-viewer.app/. License: Apache-2.0. For second development or commercial use, keep clear Flyfish Viewer attribution; shared compatibility fixes are welcome in the matching component repository.
 <!-- FILE_VIEWER_GENERATED:END -->
