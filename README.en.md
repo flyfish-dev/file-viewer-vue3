@@ -90,7 +90,7 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 
 | Option | Description |
 | --- | --- |
-| `url` | Remote file URL for CDN, object storage, or business API file links. |
+| `url` | Remote file URL from object storage, business APIs, or intranet file services. |
 | `file` | `File`, `Blob`, or `ArrayBuffer` for uploads, local selection, or already-fetched binary data. |
 | `buffer` | Direct `ArrayBuffer` input after custom download, authorization, or decryption. |
 | `name` / `filename` | Display name and extension hint. Pass it explicitly when the URL has no useful extension. |
@@ -144,8 +144,10 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 | --- | --- |
 | Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
 | CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
-| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.docx.workerUrl`, and `options.spreadsheet.workerUrl`; DOCX and Excel Workers are explicit opt-in to avoid local-server, mobile WebView, MIME/CSP, or complex-style issues. |
-| Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed. |
+| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.docx.workerUrl`, and `options.spreadsheet.workerUrl`; DOCX and Excel Workers are explicit opt-in. |
+| Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed; missing local Typst WASM falls back to source preview, not a public CDN. |
+| Drawing | Draw.io uses the official diagrams.net offline viewer shipped with viewer assets by default; override `options.drawing.viewerScriptUrl` for custom paths, or set `preferOfficial:false` for the built-in SVG fallback. |
+| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, and Office worker/vendor assets. |
 | Deployment principle | Heavy workers, WASM files, and parser libraries stay lazy-loaded and are only requested when the active file type needs them. |
 
 ## Quality Gates
