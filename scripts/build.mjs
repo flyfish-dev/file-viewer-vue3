@@ -1,9 +1,7 @@
-import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const require = createRequire(import.meta.url)
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDir = resolve(packageDir, 'dist')
 const args = new Set(process.argv.slice(2))
@@ -81,42 +79,6 @@ async function fixInlineWorkerBlobs() {
   }
 }
 
-function resolveCadViewerPackageJson() {
-  try {
-    return require.resolve('@flyfish-dev/cad-viewer/package.json')
-  } catch {
-    const corePackageJson = require.resolve('@file-viewer/core/package.json')
-    const coreRequire = createRequire(corePackageJson)
-    return coreRequire.resolve('@flyfish-dev/cad-viewer/package.json')
-  }
-}
-
-async function copyChecked(from, to) {
-  const info = await stat(from)
-  if (!info.isFile() || info.size <= 0) {
-    throw new Error(`[file-viewer-vue3] Invalid CAD asset: ${from}`)
-  }
-  await copyFile(from, to)
-}
-
-async function copyCadWasmAssets() {
-  const packageJson = resolveCadViewerPackageJson()
-  const packageRoot = dirname(packageJson)
-  const wasmDir = join(packageRoot, 'dist', 'wasm')
-  const targetRoot = join(distDir, 'wasm', 'cad')
-  await mkdir(targetRoot, { recursive: true })
-  await copyChecked(join(wasmDir, 'libredwg-web.js'), join(targetRoot, 'libredwg-web.js'))
-  await copyChecked(join(wasmDir, 'libredwg-web.wasm'), join(targetRoot, 'libredwg-web.wasm'))
-  await copyChecked(join(wasmDir, 'dwfv-render.wasm'), join(targetRoot, 'dwfv-render.wasm'))
-  for (const file of await readdir(wasmDir)) {
-    if (/^dwg-worker-.+\.js$/.test(file)) {
-      await copyChecked(join(wasmDir, file), join(targetRoot, file))
-    }
-  }
-  await copyChecked(join(wasmDir, 'dwg-worker.js'), join(targetRoot, 'dwg-worker.js'))
-  console.log(`[file-viewer-vue3] CAD WASM assets copied to ${targetRoot.replace(`${packageDir}/`, '')}`)
-}
-
 async function writeCompatibilityCss() {
   await mkdir(distDir, { recursive: true })
   await writeFile(resolve(distDir, 'file-viewer3.css'), [
@@ -151,7 +113,6 @@ async function verifyPackageOutput() {
   await assertFile('dist/src/package/index.d.ts')
   await assertFile('dist/style.css')
   await assertFile('dist/file-viewer3.css')
-  await assertFile('dist/wasm/cad/dwg-worker.js')
 
   await assertMissing('dist/index.html')
   await assertMissing('dist/compare.html')
@@ -169,7 +130,6 @@ async function verifyPackageOutput() {
 if (!args.has('--verify-only')) {
   await inlineCssAssetUrls()
   await fixInlineWorkerBlobs()
-  await copyCadWasmAssets()
   await writeCompatibilityCss()
 }
 

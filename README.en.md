@@ -41,22 +41,22 @@ The component instance exposes `downloadOriginalFile()`, `printRenderedHtml()`, 
 <!-- FILE_VIEWER_GENERATED:START -->
 ## Ecosystem Matrix
 
-Every standard component package shares `@file-viewer/core` as the only common foundation, and no framework component package depends on another framework implementation. Core owns format metadata, source loading, browser/renderers, events, operation APIs, search, zoom, print, and export; each framework package owns its local controller, component lifecycle, type exports, and ecosystem-specific interaction layer.
+Every standard component package shares `@file-viewer/core` as the only common foundation, and no framework component package depends on another framework implementation. Core owns format metadata, source loading, the renderer protocol, events, operation APIs, search, zoom, print, and export. Heavy PDF, Word, PPTX, CAD, Typst, and similar pipelines are assembled explicitly through renderer packages or presets; each framework package owns its local controller, component lifecycle, type exports, and ecosystem-specific interaction layer.
 
 | Framework | Standard npm package | Entrypoints | GitHub | Gitee | Historical aliases |
 | --- | --- | --- | --- | --- | --- |
+| Vanilla JS / Pure Web | `@file-viewer/web` | ESM, type declarations, script tag IIFE, worker/WASM viewer assets, asset copy CLI | [file-viewer-web](https://github.com/flyfish-dev/file-viewer-web) | [file-viewer-web](https://gitee.com/flyfish-dev/file-viewer-web) | `@flyfish-group/file-viewer-web` |
 | Vue 3 | `@file-viewer/vue3` | ESM, type declarations | [file-viewer-vue3](https://github.com/flyfish-dev/file-viewer-vue3) | [file-viewer-vue3](https://gitee.com/flyfish-dev/file-viewer-vue3) | `@flyfish-group/file-viewer3`, `file-viewer3` |
 | Vue 2.7 | `@file-viewer/vue2.7` | ESM, type declarations | [file-viewer-vue2.7](https://github.com/flyfish-dev/file-viewer-vue2.7) | [file-viewer-vue2.7](https://gitee.com/flyfish-dev/file-viewer-vue2.7) | `@flyfish-group/file-viewer` |
 | Vue 2.6 | `@file-viewer/vue2.6` | ESM, type declarations | [file-viewer-vue2.6](https://github.com/flyfish-dev/file-viewer-vue2.6) | [file-viewer-vue2.6](https://gitee.com/flyfish-dev/file-viewer-vue2.6) | none |
 | React 18/19 | `@file-viewer/react` | ESM, type declarations | [file-viewer-react](https://github.com/flyfish-dev/file-viewer-react) | [file-viewer-react](https://gitee.com/flyfish-dev/file-viewer-react) | `@flyfish-group/file-viewer-react` |
 | React 16.8/17 | `@file-viewer/react-legacy` | ESM, type declarations | [file-viewer-react-legacy](https://github.com/flyfish-dev/file-viewer-react-legacy) | [file-viewer-react-legacy](https://gitee.com/flyfish-dev/file-viewer-react-legacy) | none |
-| Pure Web | `@file-viewer/web` | ESM, type declarations, script tag IIFE, worker/WASM viewer assets, asset copy CLI | [file-viewer-web](https://github.com/flyfish-dev/file-viewer-web) | [file-viewer-web](https://gitee.com/flyfish-dev/file-viewer-web) | `@flyfish-group/file-viewer-web` |
 | jQuery | `@file-viewer/jquery` | ESM, type declarations | [file-viewer-jquery](https://github.com/flyfish-dev/file-viewer-jquery) | [file-viewer-jquery](https://gitee.com/flyfish-dev/file-viewer-jquery) | none |
 | Svelte | `@file-viewer/svelte` | Svelte component, ESM, type declarations | [file-viewer-svelte](https://github.com/flyfish-dev/file-viewer-svelte) | [file-viewer-svelte](https://gitee.com/flyfish-dev/file-viewer-svelte) | none |
 
 ## Format Support Matrix
 
-The shared core currently covers 23 preview pipelines and 194 file extensions. Renderers stay lazy-loaded, and component packages only adapt their own ecosystem without nesting through another framework implementation.
+The shared format matrix currently covers 24 preview pipelines and 206 file extensions. Full capability is assembled through renderer packages or presets, while component packages only adapt their own ecosystem without nesting through another framework implementation.
 
 | Preview pipeline | Category | Extensions | Capabilities | Loading |
 | --- | --- | --- | --- | --- |
@@ -70,19 +70,59 @@ The shared core currently covers 23 preview pipelines and 194 file extensions. R
 | Typst | document | `.typ`, `.typst` | download, print(adapter), HTML export(adapter), zoom(provider), search | lazy async |
 | Archive | archive | `.zip`, `.zipx`, `.7z`, `.rar`, `.tar`, `.gz`, `.gzip`, `.tgz`, `.bz2`, `.bzip2`, `.tbz`, `.tbz2`, `.xz`, `.txz`, `.lzma`, `.zst`, `.tzst`, `.cab`, `.ar`, `.cpio`, `.iso`, `.xar`, `.lha`, `.lzh`, `.jar`, `.war`, `.ear`, `.apk`, `.cbz`, `.cbr` | download, search | lazy async |
 | Email | email | `.eml`, `.msg`, `.mbox` | download, HTML export, search | lazy async |
-| EDA | eda | `.olb`, `.dra` | download, print, HTML export, search | lazy async |
+| EDA | eda | `.olb`, `.dra`, `.gds`, `.oas`, `.oasis` | download, print, HTML export, search | lazy async |
 | CAD | cad | `.dxf`, `.dwg`, `.dwf`, `.dwfx`, `.xps` | download, print, HTML export, zoom(provider) | lazy async |
-| 3D Model | model | `.glb`, `.gltf`, `.obj`, `.stl`, `.ply`, `.fbx`, `.dae`, `.3ds`, `.3mf`, `.amf`, `.usd`, `.usda`, `.usdc`, `.usdz`, `.kmz`, `.step`, `.stp`, `.iges`, `.igs`, `.ifc`, `.3dm`, `.pcd`, `.wrl`, `.vrml`, `.xyz`, `.vtk`, `.vtp` | download, zoom(provider) | lazy async |
+| 3D Model | model | `.glb`, `.gltf`, `.obj`, `.stl`, `.ply`, `.fbx`, `.dae`, `.3ds`, `.3mf`, `.amf`, `.usd`, `.usda`, `.usdc`, `.usdz`, `.kmz`, `.step`, `.stp`, `.iges`, `.igs`, `.ifc`, `.3dm`, `.brep`, `.pcd`, `.wrl`, `.vrml`, `.xyz`, `.vtk`, `.vtp` | download, zoom(provider) | lazy async |
 | Geospatial | geo | `.geojson`, `.kml`, `.gpx`, `.shp` | download, print, HTML export, zoom(provider), search | lazy async |
-| Drawing | drawing | `.excalidraw`, `.drawio`, `.dio` | download, print, HTML export, zoom(provider), search | lazy async |
+| Drawing | drawing | `.excalidraw`, `.drawio`, `.dio`, `.mermaid`, `.mmd`, `.plantuml`, `.puml` | download, print, HTML export, zoom(provider), search | lazy async |
+| Mind Map | mindmap | `.xmind` | download, print, HTML export, zoom(provider), search | lazy async |
 | EPUB | ebook | `.epub` | download, HTML export, search(provider) | lazy async |
 | UMD | ebook | `.umd` | download, print, HTML export, zoom(provider), search | lazy async |
 | Image | image | `.gif`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.tif`, `.png`, `.svg`, `.webp`, `.avif`, `.ico`, `.heic`, `.heif`, `.jxl` | download, print, HTML export, zoom(provider) | lazy async |
 | Markdown | markdown | `.md`, `.markdown` | download, print, HTML export, search | lazy async |
-| Code and Text | code | `.txt`, `.json`, `.js`, `.mjs`, `.cjs`, `.css`, `.java`, `.py`, `.html`, `.htm`, `.jsx`, `.ts`, `.tsx`, `.xml`, `.log`, `.vue`, `.yaml`, `.yml`, `.ini`, `.sh`, `.bash`, `.sql`, `.go`, `.rs`, `.php`, `.c`, `.cpp`, `.cc`, `.h`, `.hpp`, `.cs`, `.diff`, `.jsonc`, `.json5`, `.ipynb`, `.toml`, `.proto`, `.hcl`, `.tex`, `.gv`, `.http`, `.react`, `.rb`, `.swift`, `.kt` | download, print, HTML export, search | lazy async |
+| Code and Text | code | `.txt`, `.json`, `.js`, `.mjs`, `.cjs`, `.css`, `.java`, `.py`, `.html`, `.htm`, `.jsx`, `.ts`, `.tsx`, `.xml`, `.log`, `.vue`, `.yaml`, `.yml`, `.ini`, `.sh`, `.bash`, `.sql`, `.go`, `.rs`, `.php`, `.c`, `.cpp`, `.cc`, `.h`, `.hpp`, `.cs`, `.diff`, `.patch`, `.bundle`, `.bdl`, `.jsonc`, `.json5`, `.ipynb`, `.toml`, `.proto`, `.hcl`, `.tex`, `.gv`, `.http`, `.react`, `.rb`, `.swift`, `.kt` | download, print, HTML export, search | lazy async |
 | Video | media | `.mp4`, `.webm`, `.m3u8` | download | lazy async |
 | Audio | media | `.mp3`, `.mpeg`, `.wav`, `.ogg`, `.oga`, `.opus`, `.m4a`, `.aac`, `.flac`, `.weba`, `.midi`, `.mid` | download | lazy async |
 | Data Asset | asset | `.ttf`, `.otf`, `.woff`, `.woff2`, `.psd`, `.ai`, `.eps`, `.sqlite`, `.wasm`, `.parquet`, `.avro`, `.webarchive` | download, HTML export, search | lazy async |
+
+## Engineering-Grade On-Demand Renderer Assembly
+
+One component, one line of code, fast integration; renderer assembly is what controls install size and first-screen bundle weight. Prefer a product-shaped preset first: `@file-viewer/preset-lite`, `@file-viewer/preset-office`, `@file-viewer/preset-engineering`, or `@file-viewer/preset-all`. Install individual renderer packages only when you need the smallest possible custom cut. The Vite plugin generates `virtual:file-viewer-renderers`, and application code passes the same shared `options` everywhere.
+
+```bash
+npm i @file-viewer/vue3 @file-viewer/core @file-viewer/vite-plugin @file-viewer/preset-office
+```
+
+```ts
+import { fileViewerRenderers } from '@file-viewer/vite-plugin'
+
+export default {
+  plugins: [
+    fileViewerRenderers({
+      preset: 'office',
+      scan: true,
+      copyAssets: true
+    })
+  ]
+}
+```
+
+```ts
+import { configuredFileViewerRenderers } from 'virtual:file-viewer-renderers'
+
+const options = {
+  builtinRenderers: 'none',
+  renderers: configuredFileViewerRenderers,
+  rendererMode: 'replace'
+}
+```
+
+- Vue, React, Svelte, jQuery, and Vanilla JavaScript / Pure Web all receive the same `options`; each package maps them to native props, hooks, actions, plugins, or `mountViewer(...)` parameters.
+- `preset-lite` covers text, Markdown, code, images, audio, and video; `preset-office` covers PDF / Word / Excel / PowerPoint / OFD; `preset-engineering` covers CAD / 3D / drawing / XMind / Geo / Typst / EDA / Data.
+- For the smallest custom bundle, skip presets, install individual renderers such as `@file-viewer/renderer-pdf` or `@file-viewer/renderer-word`, and let `formats` generate exact imports.
+- `scan:true` detects `fileViewerFormats`, `data-file-viewer-formats`, and upload `accept` hints so development and production builds select matching renderers automatically.
+- `copyAssets:true` copies PDF/CAD/Typst/Archive/Data workers, WASM, and vendor assets for offline and enterprise intranet deployment.
+- If you want the complete official demo capability matrix, install `@file-viewer/preset-all` and pass `allRenderers` to `renderers`; this is ideal for demos and internal admin tools, but should not be every product default.
 
 ## Shared Options And Events
 
@@ -97,20 +137,20 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 | `type` | Explicit extension or MIME hint that overrides automatic detection. |
 | `size` | File size hint used in lifecycle context, loading states, and safety limits. |
 | `options` | The shared `FileViewerOptions` surface. Every component package keeps the same semantics. |
-| `onEvent` / `onStateChange` | Unified event and state subscriptions for imperative wrappers such as Pure Web, React, and Svelte. Vue maps the same events to native emits. |
+| `onEvent` / `onStateChange` | Unified event and state subscriptions for imperative wrappers such as Vanilla JavaScript / Pure Web, React, and Svelte. Vue maps the same events to native emits. |
 
 ## Actual Component Props
 
-The table below lists the real props, event channel, and customization entry for every standard package. If you need imperative mount fields such as `buffer`, `name`, `type`, or `size`, prefer React, Pure Web, Svelte, jQuery, or Vue 2. The Vue 3 declarative component intentionally keeps the compact `url` / `file` / `options` entry; wrap raw binary input as a named `File` when extension detection matters.
+The table below lists the real props, event channel, and customization entry for every standard package. If you need imperative mount fields such as `buffer`, `name`, `type`, or `size`, prefer Vanilla JavaScript / Pure Web, React, Svelte, jQuery, or Vue 2. The Vue 3 declarative component intentionally keeps the compact `url` / `file` / `options` entry; wrap raw binary input as a named `File` when extension detection matters.
 
 | Component | Actual props / entry | Event channel | Customization entry |
 | --- | --- | --- | --- |
+| Vanilla JS / Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` attributes: `src/url`, `filename/name`, `type`, `size`, `theme`, `toolbar`, `toolbar-position`, `watermark`, `search`, `options`; also supports `mountViewer(...)` | `viewer-ready`, `viewer-event`, `viewer-state-change`, `viewer-error`, `onEvent`, `onStateChange`, `controller.subscribe()` | The Custom Element instance exposes the full controller handle; the IIFE script auto-registers it while keeping imperative `mountViewer` and the asset copy CLI. |
 | Vue 3 `@file-viewer/vue3` | `url`, `file`, `options` | `load-start`, `load-complete`, `unload-start`, `unload-complete`, `operation-before`, `operation-cancel`, `operation-availability-change`, `search-change`, `location-change`, `zoom-change` | Template refs expose `FileViewerExpose`. For `Blob` / `ArrayBuffer`, prefer wrapping it as a named `File` so extension detection stays deterministic. |
 | Vue 2.7 `@file-viewer/vue2.7` | `url`, `file`, `buffer`, `name`, `filename`, `type`, `size`, `options`, `containerClass`, `containerStyle` | `viewer-event` / `viewerEvent` | The component instance exposes the full controller handle. This is the Vue 2.7 line behind the historical `@flyfish-group/file-viewer` package. |
 | Vue 2.6 `@file-viewer/vue2.6` | Same as Vue 2.7 | `viewer-event` / `viewerEvent` | Separate Vue 2.6 build for long-lived applications that cannot move to Vue 2.7. |
 | React `@file-viewer/react` | `ViewerMountOptions` plus native `div` props such as `className`, `style`, `data-*`, and `aria-*` | `onEvent`, `onStateChange` | `ref` exposes `FileViewerHandle`; `useFileViewer()` returns `ref`, `props`, `state`, and `handle` for custom toolbars. |
 | React Legacy `@file-viewer/react-legacy` | Same as the React package | `onEvent`, `onStateChange` | Targets React 16.8 / 17 with a legacy-friendly component export. |
-| Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` attributes: `src/url`, `filename/name`, `type`, `size`, `theme`, `toolbar`, `toolbar-position`, `watermark`, `search`, `options`; also supports `mountViewer(...)` | `viewer-ready`, `viewer-event`, `viewer-state-change`, `viewer-error`, `onEvent`, `onStateChange`, `controller.subscribe()` | The Custom Element instance exposes the full controller handle; the IIFE script auto-registers it while keeping imperative `mountViewer` and the asset copy CLI. |
 | jQuery `@file-viewer/jquery` | `$(el).fileViewer(ViewerMountOptions & { replace?: boolean })` | `onEvent`, `onStateChange`, or `getFileViewerController(el).subscribe()` | Plugin methods include `zoomIn`, `printRenderedHtml`, and `searchDocument`; `replace:false` updates the same node in place. |
 | Svelte `@file-viewer/svelte` | `ViewerMountOptions` plus `className` and `containerStyle` | `on:viewerEvent`, `onEvent`, `onStateChange` | `bind:this` exposes the controller handle; the `use:fileViewer` action is also available and adds `replace`. |
 
@@ -123,7 +163,7 @@ The table below lists the real props, event channel, and customization entry for
 | `ai` | Text collection, chunk size, and max text length for provenance, location, vectorization, and external AI workflows. |
 | `archive` | Archive Worker/WASM URLs, timeout, cache, archive limits, and nested entry preview limits. |
 | `pdf` | PDF.js worker, navigation pane, outline, thumbnails, rotation, streaming, range chunk size, and credentials. |
-| `docx` / `spreadsheet` | DOCX uses the self-maintained @file-viewer/docx engine with Worker parsing, continuous flow reading, and async rendering by default; visual pagination is opt-in. Spreadsheet keeps fidelity-first main-thread parsing with Worker opt-in. |
+| `docx` / `spreadsheet` | DOCX is provided by @file-viewer/renderer-word and uses the self-maintained @file-viewer/docx engine with Worker parsing, continuous flow reading, and async rendering by default; visual pagination is opt-in. Spreadsheet is provided by @file-viewer/renderer-spreadsheet with fidelity-first main-thread parsing, opt-in Worker loading, and opt-in header drag column resizing. |
 | `typst` / `data` / `cad` | Typst, SQLite, CAD/DWG/DXF/DWF WASM, worker, encoding, and rendering strategy options. |
 | `hooks` / `beforeOperation` | Shared lifecycle hooks and operation preflight checks for audit, permission, telemetry, and safety controls. |
 
@@ -142,10 +182,10 @@ For fully custom toolbars, hide the built-in toolbar and call the standard ref /
 
 | Ecosystem | Recommended pattern |
 | --- | --- |
+| Vanilla JS / Pure Web | Use `<flyfish-file-viewer toolbar="false">` or `mountViewer(container, { options:{ toolbar:false }, onStateChange })`; custom DOM buttons can call `zoomIn()`, `printRenderedHtml()`, `searchDocument()`, and other element / controller methods directly. Use `viewer-state-change` or `controller.subscribe()` for advanced state sync. |
 | Vue 3 | Pass `:options="{ toolbar: false }"`, call `downloadOriginalFile()`, `printRenderedHtml()`, `exportRenderedHtml()`, `zoomIn()`, `zoomOut()`, and `resetZoom()` through the template ref, and sync buttons with `@operation-availability-change` plus `@zoom-change`. |
 | Vue 2.7 / 2.6 | Use `toolbar:false`, call instance methods through `$refs.viewer`, and listen to `@viewer-event` for `operation-availability-change` or `zoom-change`. |
 | React / React Legacy | Prefer `useFileViewer({ options:{ toolbar:false } })`; pass `viewer.props` to the component, bind custom buttons to `viewer.handle`, and read `viewer.state.availability` / `viewer.state.zoom`. |
-| Pure Web | Use `<flyfish-file-viewer toolbar="false">` or `mountViewer(container, { options:{ toolbar:false }, onStateChange })`; custom DOM buttons can call `zoomIn()`, `printRenderedHtml()`, `searchDocument()`, and other element / controller methods directly. Use `viewer-state-change` or `controller.subscribe()` for advanced state sync. |
 | jQuery | Use `$("#viewer").fileViewer({ options:{ toolbar:false } })`; buttons can call `$("#viewer").fileViewer("zoomIn")` or read capability state through `getFileViewerController($("#viewer")).subscribe()`. |
 | Svelte | Use `<FileViewer bind:this={viewer} options={{ toolbar:false }} />`; buttons call `viewer.zoomIn()` / `viewer.printRenderedHtml()`, with `on:viewerEvent` or `onStateChange` for state sync. |
 
@@ -181,7 +221,7 @@ For fully custom toolbars, hide the built-in toolbar and call the standard ref /
 | --- | --- |
 | Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
 | CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
-| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, and `options.spreadsheet.workerUrl`; DOCX Worker parsing is enabled by default while Excel Worker remains explicit opt-in. |
+| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, and `options.spreadsheet.workerUrl`; DOCX Worker parsing is enabled by default, Excel Worker remains explicit opt-in, and header drag column resizing is controlled by `options.spreadsheet.resizableColumns`. |
 | Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed; Typst renders through local WASM only and never falls back to a public CDN. |
 | Drawing | Draw.io uses the official diagrams.net offline viewer shipped with viewer assets by default; override `options.drawing.viewerScriptUrl` for custom paths, or set `preferOfficial:false` for the built-in SVG fallback. |
 | Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, DOCX worker/JSZip, and Office worker/vendor assets. |

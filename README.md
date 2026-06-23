@@ -36,29 +36,30 @@ createApp(App).use(FileViewer).mount('#app')
 
 ## 能力范围
 
-`@file-viewer/vue3` 与纯 Web、Vue2、React、jQuery 和 Svelte standard component package 共享同一套 `@file-viewer/core` 能力，覆盖 PDF、Word、Excel、PPT、OFD、CAD/DWG/DXF/DWF、EPUB/UMD、压缩包、邮件、Markdown、代码高亮、图片、音频、视频、3D 模型、地理数据和结构化数据资产等预览链路。完整格式矩阵和参数说明见官方文档: https://doc.file-viewer.app/guide/formats
+`@file-viewer/vue3` 与其他标准组件包共享同一套 core 接口和 renderer/preset 装配模型；完整能力可通过按需 renderer 或 `@file-viewer/preset-all` 覆盖 PDF、Word、Excel、PPT、OFD、CAD/DWG/DXF/DWF、EPUB/UMD、压缩包、邮件、Markdown、代码高亮、图片、音频、视频、3D 模型、地理数据和结构化数据资产等预览链路。完整格式矩阵和参数说明见官方文档: https://doc.file-viewer.app/guide/formats
+
 
 English README: [README.en.md](./README.en.md)。
 
 <!-- FILE_VIEWER_GENERATED:START -->
 ## 生态包矩阵
 
-所有标准组件包都只共享 `@file-viewer/core` 这个总底座，不依赖其他框架组件实现。core 内部负责格式矩阵、资源解析、browser/renderers、事件、操作 API、搜索、缩放、打印和导出；各框架组件包自己维护本地 controller、组件生命周期、类型出口和生态交互。
+所有标准组件包都只共享 `@file-viewer/core` 这个总底座，不依赖其他框架组件实现。core 负责格式矩阵、资源解析、renderer 协议、事件、操作 API、搜索、缩放、打印和导出；PDF、Word、PPTX、CAD、Typst 等重型链路通过独立 renderer 或 preset 显式装配；各框架组件包自己维护本地 controller、组件生命周期、类型出口和生态交互。
 
 | 框架 | 标准 npm 包 | 入口格式 | GitHub | Gitee | 兼容历史包 |
 | --- | --- | --- | --- | --- | --- |
+| Vanilla JS / Pure Web | `@file-viewer/web` | ESM, 类型声明, script 标签 IIFE, Worker/WASM viewer 资源, 复制静态资源 CLI | [file-viewer-web](https://github.com/flyfish-dev/file-viewer-web) | [file-viewer-web](https://gitee.com/flyfish-dev/file-viewer-web) | `@flyfish-group/file-viewer-web` |
 | Vue 3 | `@file-viewer/vue3` | ESM, 类型声明 | [file-viewer-vue3](https://github.com/flyfish-dev/file-viewer-vue3) | [file-viewer-vue3](https://gitee.com/flyfish-dev/file-viewer-vue3) | `@flyfish-group/file-viewer3`, `file-viewer3` |
 | Vue 2.7 | `@file-viewer/vue2.7` | ESM, 类型声明 | [file-viewer-vue2.7](https://github.com/flyfish-dev/file-viewer-vue2.7) | [file-viewer-vue2.7](https://gitee.com/flyfish-dev/file-viewer-vue2.7) | `@flyfish-group/file-viewer` |
 | Vue 2.6 | `@file-viewer/vue2.6` | ESM, 类型声明 | [file-viewer-vue2.6](https://github.com/flyfish-dev/file-viewer-vue2.6) | [file-viewer-vue2.6](https://gitee.com/flyfish-dev/file-viewer-vue2.6) | 无 |
 | React 18/19 | `@file-viewer/react` | ESM, 类型声明 | [file-viewer-react](https://github.com/flyfish-dev/file-viewer-react) | [file-viewer-react](https://gitee.com/flyfish-dev/file-viewer-react) | `@flyfish-group/file-viewer-react` |
 | React 16.8/17 | `@file-viewer/react-legacy` | ESM, 类型声明 | [file-viewer-react-legacy](https://github.com/flyfish-dev/file-viewer-react-legacy) | [file-viewer-react-legacy](https://gitee.com/flyfish-dev/file-viewer-react-legacy) | 无 |
-| Pure Web | `@file-viewer/web` | ESM, 类型声明, script 标签 IIFE, Worker/WASM viewer 资源, 复制静态资源 CLI | [file-viewer-web](https://github.com/flyfish-dev/file-viewer-web) | [file-viewer-web](https://gitee.com/flyfish-dev/file-viewer-web) | `@flyfish-group/file-viewer-web` |
 | jQuery | `@file-viewer/jquery` | ESM, 类型声明 | [file-viewer-jquery](https://github.com/flyfish-dev/file-viewer-jquery) | [file-viewer-jquery](https://gitee.com/flyfish-dev/file-viewer-jquery) | 无 |
 | Svelte | `@file-viewer/svelte` | Svelte 组件, ESM, 类型声明 | [file-viewer-svelte](https://github.com/flyfish-dev/file-viewer-svelte) | [file-viewer-svelte](https://gitee.com/flyfish-dev/file-viewer-svelte) | 无 |
 
 ## 格式支持矩阵
 
-共享 core 当前覆盖 23 条预览链路、194 个扩展名。所有格式都按需异步加载，组件层只做生态适配，不互相嵌套。
+共享格式矩阵当前覆盖 24 条预览链路、206 个扩展名。完整能力通过 renderer / preset 按需装配，组件层只做生态适配，不互相嵌套。
 
 | 预览链路 | 分类 | 扩展名 | 能力 | 加载 |
 | --- | --- | --- | --- | --- |
@@ -72,19 +73,59 @@ English README: [README.en.md](./README.en.md)。
 | Typst | document | `.typ`, `.typst` | 下载, 打印(适配器), HTML(适配器), 缩放(Provider), 搜索 | 按需异步 |
 | Archive | archive | `.zip`, `.zipx`, `.7z`, `.rar`, `.tar`, `.gz`, `.gzip`, `.tgz`, `.bz2`, `.bzip2`, `.tbz`, `.tbz2`, `.xz`, `.txz`, `.lzma`, `.zst`, `.tzst`, `.cab`, `.ar`, `.cpio`, `.iso`, `.xar`, `.lha`, `.lzh`, `.jar`, `.war`, `.ear`, `.apk`, `.cbz`, `.cbr` | 下载, 搜索 | 按需异步 |
 | Email | email | `.eml`, `.msg`, `.mbox` | 下载, HTML, 搜索 | 按需异步 |
-| EDA | eda | `.olb`, `.dra` | 下载, 打印, HTML, 搜索 | 按需异步 |
+| EDA | eda | `.olb`, `.dra`, `.gds`, `.oas`, `.oasis` | 下载, 打印, HTML, 搜索 | 按需异步 |
 | CAD | cad | `.dxf`, `.dwg`, `.dwf`, `.dwfx`, `.xps` | 下载, 打印, HTML, 缩放(Provider) | 按需异步 |
-| 3D Model | model | `.glb`, `.gltf`, `.obj`, `.stl`, `.ply`, `.fbx`, `.dae`, `.3ds`, `.3mf`, `.amf`, `.usd`, `.usda`, `.usdc`, `.usdz`, `.kmz`, `.step`, `.stp`, `.iges`, `.igs`, `.ifc`, `.3dm`, `.pcd`, `.wrl`, `.vrml`, `.xyz`, `.vtk`, `.vtp` | 下载, 缩放(Provider) | 按需异步 |
+| 3D Model | model | `.glb`, `.gltf`, `.obj`, `.stl`, `.ply`, `.fbx`, `.dae`, `.3ds`, `.3mf`, `.amf`, `.usd`, `.usda`, `.usdc`, `.usdz`, `.kmz`, `.step`, `.stp`, `.iges`, `.igs`, `.ifc`, `.3dm`, `.brep`, `.pcd`, `.wrl`, `.vrml`, `.xyz`, `.vtk`, `.vtp` | 下载, 缩放(Provider) | 按需异步 |
 | Geospatial | geo | `.geojson`, `.kml`, `.gpx`, `.shp` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
-| Drawing | drawing | `.excalidraw`, `.drawio`, `.dio` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
+| Drawing | drawing | `.excalidraw`, `.drawio`, `.dio`, `.mermaid`, `.mmd`, `.plantuml`, `.puml` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
+| Mind Map | mindmap | `.xmind` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
 | EPUB | ebook | `.epub` | 下载, HTML, 搜索(Provider) | 按需异步 |
 | UMD | ebook | `.umd` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
 | Image | image | `.gif`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.tif`, `.png`, `.svg`, `.webp`, `.avif`, `.ico`, `.heic`, `.heif`, `.jxl` | 下载, 打印, HTML, 缩放(Provider) | 按需异步 |
 | Markdown | markdown | `.md`, `.markdown` | 下载, 打印, HTML, 搜索 | 按需异步 |
-| Code and Text | code | `.txt`, `.json`, `.js`, `.mjs`, `.cjs`, `.css`, `.java`, `.py`, `.html`, `.htm`, `.jsx`, `.ts`, `.tsx`, `.xml`, `.log`, `.vue`, `.yaml`, `.yml`, `.ini`, `.sh`, `.bash`, `.sql`, `.go`, `.rs`, `.php`, `.c`, `.cpp`, `.cc`, `.h`, `.hpp`, `.cs`, `.diff`, `.jsonc`, `.json5`, `.ipynb`, `.toml`, `.proto`, `.hcl`, `.tex`, `.gv`, `.http`, `.react`, `.rb`, `.swift`, `.kt` | 下载, 打印, HTML, 搜索 | 按需异步 |
+| Code and Text | code | `.txt`, `.json`, `.js`, `.mjs`, `.cjs`, `.css`, `.java`, `.py`, `.html`, `.htm`, `.jsx`, `.ts`, `.tsx`, `.xml`, `.log`, `.vue`, `.yaml`, `.yml`, `.ini`, `.sh`, `.bash`, `.sql`, `.go`, `.rs`, `.php`, `.c`, `.cpp`, `.cc`, `.h`, `.hpp`, `.cs`, `.diff`, `.patch`, `.bundle`, `.bdl`, `.jsonc`, `.json5`, `.ipynb`, `.toml`, `.proto`, `.hcl`, `.tex`, `.gv`, `.http`, `.react`, `.rb`, `.swift`, `.kt` | 下载, 打印, HTML, 搜索 | 按需异步 |
 | Video | media | `.mp4`, `.webm`, `.m3u8` | 下载 | 按需异步 |
 | Audio | media | `.mp3`, `.mpeg`, `.wav`, `.ogg`, `.oga`, `.opus`, `.m4a`, `.aac`, `.flac`, `.weba`, `.midi`, `.mid` | 下载 | 按需异步 |
 | Data Asset | asset | `.ttf`, `.otf`, `.woff`, `.woff2`, `.psd`, `.ai`, `.eps`, `.sqlite`, `.wasm`, `.parquet`, `.avro`, `.webarchive` | 下载, HTML, 搜索 | 按需异步 |
+
+## 工程级按需 renderer 装配
+
+一个组件，一行代码，快速集成；真正影响安装体积和首屏包体的是 renderer 装配。推荐优先按产品形态选择 `@file-viewer/preset-lite`、`@file-viewer/preset-office`、`@file-viewer/preset-engineering` 或 `@file-viewer/preset-all`，需要极致裁剪时再安装单个 renderer 包。Vite 插件负责生成 `virtual:file-viewer-renderers`，业务代码只传同一套 `options`。
+
+```bash
+npm i @file-viewer/vue3 @file-viewer/core @file-viewer/vite-plugin @file-viewer/preset-office
+```
+
+```ts
+import { fileViewerRenderers } from '@file-viewer/vite-plugin'
+
+export default {
+  plugins: [
+    fileViewerRenderers({
+      preset: 'office',
+      scan: true,
+      copyAssets: true
+    })
+  ]
+}
+```
+
+```ts
+import { configuredFileViewerRenderers } from 'virtual:file-viewer-renderers'
+
+const options = {
+  builtinRenderers: 'none',
+  renderers: configuredFileViewerRenderers,
+  rendererMode: 'replace'
+}
+```
+
+- Vue、React、Svelte、jQuery、Vanilla JS / Pure Web 都传同一份 `options`，只是在各自生态中映射为 props、hook、action、plugin 或 `mountViewer(...)` 参数。
+- `preset-lite` 面向文本、Markdown、代码、图片和音视频；`preset-office` 面向 PDF / Word / Excel / PowerPoint / OFD；`preset-engineering` 面向 CAD / 3D / 绘图 / XMind / Geo / Typst / EDA / Data。
+- 想要最小包体时，可以不用 preset，直接安装 `@file-viewer/renderer-pdf`、`@file-viewer/renderer-word` 等单个 renderer，并用 `formats` 精确生成 import。
+- `scan:true` 会识别 `fileViewerFormats`、`data-file-viewer-formats` 和上传控件 `accept`，调试与打包时自动选择 renderer。
+- `copyAssets:true` 会复制 PDF/CAD/Typst/Archive/Data 等 worker、WASM 和 vendor 资源，满足离线和企业内网部署。
+- 想一次性拥有官方 Demo 的完整能力时，可以安装 `@file-viewer/preset-all` 并把 `allRenderers` 传给 `renderers`；这适合 demo 和后台运维工具，不建议作为所有业务默认入口。
 
 ## 统一参数与事件
 
@@ -99,20 +140,20 @@ English README: [README.en.md](./README.en.md)。
 | `type` | 显式指定扩展名或 MIME 线索，覆盖自动识别结果。 |
 | `size` | 文件大小提示，用于生命周期上下文、加载状态和安全限制展示。 |
 | `options` | 完整 `FileViewerOptions`，所有框架包保持同一套参数语义。 |
-| `onEvent` / `onStateChange` | Pure Web、React、Svelte 等命令式包装层的统一事件和状态订阅；Vue 组件会映射为原生 emit。 |
+| `onEvent` / `onStateChange` | Vanilla JS / Pure Web、React、Svelte 等命令式包装层的统一事件和状态订阅；Vue 组件会映射为原生 emit。 |
 
 ## 实际组件属性
 
-下面列的是每个标准组件包当前真实暴露的属性、事件和控制入口。需要 `buffer`、`name`、`type`、`size` 这类命令式挂载参数时，优先选择 React、Pure Web、Svelte、jQuery 或 Vue2 组件；Vue3 声明式组件保持 `url` / `file` / `options` 的简洁入口，复杂二进制来源请包装成带文件名的 `File`。
+下面列的是每个标准组件包当前真实暴露的属性、事件和控制入口。需要 `buffer`、`name`、`type`、`size` 这类命令式挂载参数时，优先选择 Vanilla JS / Pure Web、React、Svelte、jQuery 或 Vue2 组件；Vue3 声明式组件保持 `url` / `file` / `options` 的简洁入口，复杂二进制来源请包装成带文件名的 `File`。
 
 | 组件 | 实际属性 / 入口 | 事件入口 | 定制入口 |
 | --- | --- | --- | --- |
+| Vanilla JS / Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` 属性 `src/url`、`filename/name`、`type`、`size`、`theme`、`toolbar`、`toolbar-position`、`watermark`、`search`、`options`；也支持 `mountViewer(...)` | `viewer-ready`、`viewer-event`、`viewer-state-change`、`viewer-error`、`onEvent`、`onStateChange`、`controller.subscribe()` | Custom Element 实例暴露完整 controller handle；IIFE script 标签会自动注册元素，同时保留 `mountViewer` 命令式挂载和资源复制 CLI。 |
 | Vue 3 `@file-viewer/vue3` | `url`、`file`、`options` | `load-start`、`load-complete`、`unload-start`、`unload-complete`、`operation-before`、`operation-cancel`、`operation-availability-change`、`search-change`、`location-change`、`zoom-change` | 模板 `ref` 暴露 `FileViewerExpose`；适合声明式接入。`Blob` / `ArrayBuffer` 建议包装成带扩展名的 `File` 后传给 `file`。 |
 | Vue 2.7 `@file-viewer/vue2.7` | `url`、`file`、`buffer`、`name`、`filename`、`type`、`size`、`options`、`containerClass`、`containerStyle` | `viewer-event` / `viewerEvent` | 组件实例暴露 controller handle 全量方法；适合 Vue 2.7 项目和历史 `@flyfish-group/file-viewer` 平滑升级。 |
 | Vue 2.6 `@file-viewer/vue2.6` | 同 Vue 2.7 | `viewer-event` / `viewerEvent` | 独立 Vue 2.6 构建，不要求业务升级到 Vue 2.7。 |
 | React `@file-viewer/react` | `ViewerMountOptions` + `div` 原生属性，如 `className`、`style`、`data-*`、`aria-*` | `onEvent`、`onStateChange` | `ref` 暴露 `FileViewerHandle`；`useFileViewer()` 会返回 `ref`、`props`、`state`、`handle`，便于自定义工具栏。 |
 | React Legacy `@file-viewer/react-legacy` | 同 React 标准包 | `onEvent`、`onStateChange` | 面向 React 16.8 / 17；组件名和默认导出保持 legacy 生态友好。 |
-| Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` 属性 `src/url`、`filename/name`、`type`、`size`、`theme`、`toolbar`、`toolbar-position`、`watermark`、`search`、`options`；也支持 `mountViewer(...)` | `viewer-ready`、`viewer-event`、`viewer-state-change`、`viewer-error`、`onEvent`、`onStateChange`、`controller.subscribe()` | Custom Element 实例暴露完整 controller handle；IIFE script 标签会自动注册元素，同时保留 `mountViewer` 命令式挂载和资源复制 CLI。 |
 | jQuery `@file-viewer/jquery` | `$(el).fileViewer(ViewerMountOptions & { replace?: boolean })` | `onEvent`、`onStateChange` 或 `getFileViewerController(el).subscribe()` | 插件方法支持 `zoomIn`、`printRenderedHtml`、`searchDocument` 等；`replace:false` 可在同一节点上原地更新。 |
 | Svelte `@file-viewer/svelte` | `ViewerMountOptions` + `className`、`containerStyle` | `on:viewerEvent`、`onEvent`、`onStateChange` | `bind:this` 暴露 controller handle；也提供 `use:fileViewer` action，action 额外支持 `replace`。 |
 
@@ -125,7 +166,7 @@ English README: [README.en.md](./README.en.md)。
 | `ai` | 控制文本结构采集、分块大小和最大文本长度，为溯源、定位、向量化和外部 AI 流程提供基础。 |
 | `archive` | 配置压缩包 Worker/WASM、超时、缓存、包体限制和压缩包内单文件预览大小。 |
 | `pdf` | 配置 PDF.js Worker、导航栏、目录、缩略图、旋转、流式读取、Range chunk 和凭据。 |
-| `docx` / `spreadsheet` | DOCX 使用自研 @file-viewer/docx，默认 Worker 解析、连续流式阅读和异步分批渲染，可按需显式开启视觉分页；表格默认保真主线程渲染，Worker 可按需显式开启。 |
+| `docx` / `spreadsheet` | DOCX 由 @file-viewer/renderer-word 承接并使用自研 @file-viewer/docx，默认 Worker 解析、连续流式阅读和异步分批渲染，可按需显式开启视觉分页；表格由 @file-viewer/renderer-spreadsheet 承接，默认保真主线程渲染，Worker 和表头拖拽调列宽均可按需显式开启。 |
 | `typst` / `data` / `cad` | 配置 Typst、SQLite、CAD/DWG/DXF/DWF 等 WASM、Worker、编码和渲染策略。 |
 | `hooks` / `beforeOperation` | 统一生命周期 hooks 和操作前置校验，可用于审计、权限、埋点和安全控制。 |
 
@@ -144,10 +185,10 @@ English README: [README.en.md](./README.en.md)。
 
 | 生态 | 推荐方式 |
 | --- | --- |
+| Vanilla JS / Pure Web | `<flyfish-file-viewer toolbar="false">` 或 `mountViewer(container, { options:{ toolbar:false }, onStateChange })`；外部 DOM 按钮可直接调用元素实例 / controller 的 `zoomIn()`、`printRenderedHtml()`、`searchDocument()` 等方法，复杂场景用 `viewer-state-change` 或 `controller.subscribe()` 同步状态。 |
 | Vue 3 | 传 `:options="{ toolbar: false }"` 隐藏内置工具栏，通过模板 `ref` 调用 `downloadOriginalFile()`、`printRenderedHtml()`、`exportRenderedHtml()`、`zoomIn()`、`zoomOut()`、`resetZoom()`；用 `@operation-availability-change` 和 `@zoom-change` 同步按钮显隐与比例。 |
 | Vue 2.7 / 2.6 | 同样设置 `toolbar:false`，通过 `$refs.viewer` 调用实例方法；监听 `@viewer-event`，在 `event.type === "operation-availability-change"` 或 `event.type === "zoom-change"` 时更新外部工具栏。 |
 | React / React Legacy | 推荐 `useFileViewer({ options:{ toolbar:false } })`，把 `viewer.props` 传给组件，把按钮绑定到 `viewer.handle`，并读取 `viewer.state.availability` / `viewer.state.zoom` 控制禁用状态。 |
-| Pure Web | `<flyfish-file-viewer toolbar="false">` 或 `mountViewer(container, { options:{ toolbar:false }, onStateChange })`；外部 DOM 按钮可直接调用元素实例 / controller 的 `zoomIn()`、`printRenderedHtml()`、`searchDocument()` 等方法，复杂场景用 `viewer-state-change` 或 `controller.subscribe()` 同步状态。 |
 | jQuery | `$("#viewer").fileViewer({ options:{ toolbar:false } })`；按钮调用 `$("#viewer").fileViewer("zoomIn")` 或通过 `getFileViewerController($("#viewer")).subscribe()` 获取能力状态。 |
 | Svelte | `<FileViewer bind:this={viewer} options={{ toolbar:false }} />`；按钮直接调用 `viewer.zoomIn()`、`viewer.printRenderedHtml()`，并用 `on:viewerEvent` / `onStateChange` 同步状态。 |
 
@@ -183,7 +224,7 @@ English README: [README.en.md](./README.en.md)。
 | --- | --- |
 | 通用 viewer assets | Pure Web 包提供 `file-viewer-copy-assets`，可把 Worker、WASM、vendor 和示例资源复制到业务静态目录。 |
 | CAD / DWG / DXF / DWF | 按需配置 `options.cad.wasmPath`、`workerUrl`、`dwfWasmUrl`、`dxfEncoding`，支持自托管和内网部署。 |
-| PDF / DOCX / Excel | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`；DOCX 默认启用自研 Worker 解析，Excel Worker 需显式开启。 |
+| PDF / DOCX / Excel | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`；DOCX 默认启用自研 Worker 解析，Excel Worker 需显式开启，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启。 |
 | Typst / SQLite / Archive | 按需配置 Typst compiler/renderer WASM、`data.sqlWasmUrl`、`archive.workerUrl` / `archive.wasmUrl`；Typst 仅使用本地 WASM 真实渲染，不访问公共 CDN。 |
 | Drawing | Draw.io 默认使用随 viewer assets 分发的官方 diagrams.net 离线 viewer；路径特殊时可通过 `options.drawing.viewerScriptUrl` 覆盖，`preferOfficial:false` 才切到内置 SVG 兜底。 |
 | 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；`file-viewer-copy-assets` 会复制 PDF、CAD、Typst、SQLite、压缩包、Draw.io、DOCX worker/JSZip 和 Office worker/vendor 资产。 |

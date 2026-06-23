@@ -286,6 +286,7 @@ useViewerPreviewLifecycle({
       >
         <div v-if='visibleToolbar.zoom' class='viewer-actions-group viewer-zoom-actions' aria-label='缩放控制'>
           <button
+            v-if='operationAvailability.zoomOut'
             type='button'
             class='viewer-icon-button'
             :disabled='zoomButtonDisabled("canZoomOut")'
@@ -296,6 +297,7 @@ useViewerPreviewLifecycle({
             <ZoomOut :size='15' :stroke-width='2.4' />
           </button>
           <button
+            v-if='operationAvailability.zoomReset'
             type='button'
             class='viewer-zoom-meter'
             :disabled='zoomButtonDisabled("canReset")'
@@ -305,6 +307,7 @@ useViewerPreviewLifecycle({
             {{ zoomState.label }}
           </button>
           <button
+            v-if='operationAvailability.zoomIn'
             type='button'
             class='viewer-icon-button'
             :disabled='zoomButtonDisabled("canZoomIn")'
@@ -315,6 +318,7 @@ useViewerPreviewLifecycle({
             <ZoomIn :size='15' :stroke-width='2.4' />
           </button>
           <button
+            v-if='operationAvailability.zoomReset'
             type='button'
             class='viewer-icon-button'
             :disabled='zoomButtonDisabled("canReset")'

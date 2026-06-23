@@ -112,8 +112,8 @@ export type FileViewerCadDwfLineWeightMode = CoreFileViewerCadDwfLineWeightMode;
 /**
  * CAD 预览配置。
  *
- * core 默认使用 @flyfish-dev/cad-viewer，并从静态资源目录下的
- * `wasm/cad/` 按需加载 LibreDWG WASM、DWF raster WASM 与 DWG Worker。
+ * 独立 CAD renderer 会从静态资源目录下的 `wasm/cad/`
+ * 按需加载 LibreDWG WASM、DWF raster WASM 与 DWG Worker。
  * 私有化部署或静态资源路径不同的场景，可以显式覆盖对应 URL。
  */
 export type FileViewerCadOptions = CoreFileViewerCadOptions;
@@ -240,8 +240,8 @@ export type FileViewerOptions = CoreFileViewerOptions;
 /**
  * DOCX 渲染配置。
  *
- * 继承 core 的 DOCX 配置：默认使用 `@file-viewer/docx` 的 Worker
- * 完成 ZIP/XML 解析，并在主线程按连续流式阅读渲染真实页面 DOM。
+ * 继承共享 DOCX 配置；完整 Word 预览由 `@file-viewer/renderer-word`
+ * 使用 `@file-viewer/docx` Worker 完成 ZIP/XML 解析，并在主线程按连续流式阅读渲染真实页面 DOM。
  * 如业务确实需要页式预览，可显式开启 `visualPagination`。
  * 组件层继续负责挂载、缩放、打印和导出适配，保证生态体验一致。
  */
