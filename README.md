@@ -90,7 +90,7 @@ English README: [README.en.md](./README.en.md)。
 
 ## 工程级按需 renderer 装配
 
-一个组件，一行代码，快速集成；真正影响安装体积和首屏包体的是 renderer 装配。推荐优先按产品形态选择 `@file-viewer/preset-lite`、`@file-viewer/preset-office`、`@file-viewer/preset-engineering` 或 `@file-viewer/preset-all`，需要极致裁剪时再安装单个 renderer 包。Vite 插件会自动发现并注入已安装的 preset，常规业务无需再手写 `renderers`。
+一个组件，一行代码，快速集成；真正影响安装体积和首屏包体的是 renderer 装配。推荐先安装当前生态组件包，再按产品形态选择 `@file-viewer/preset-lite`、`@file-viewer/preset-office`、`@file-viewer/preset-engineering` 或 `@file-viewer/preset-all`。`@file-viewer/vite-plugin` 会免配置自动发现当前项目已安装的 preset、注入 renderer virtual module，并让组件通过默认开启的 `autoRenderers` 获得对应能力，常规业务无需手写 `renderers`。
 
 ```bash
 npm i @file-viewer/vue3 @file-viewer/core @file-viewer/vite-plugin @file-viewer/preset-office
@@ -102,10 +102,8 @@ import { fileViewerRenderers } from '@file-viewer/vite-plugin'
 export default {
   plugins: [
     fileViewerRenderers({
-      preset: 'office',
-      scan: true,
       copyAssets: true
-      // 默认 inject:true，组件会自动获得 office 预览能力。
+      // 无需 preset 配置：插件会自动发现已安装的 @file-viewer/preset-office。
     })
   ]
 }
@@ -113,14 +111,38 @@ export default {
 
 ```ts
 const options = {
-  // 可选：需要完全手动控制时设为 false。
+  // 默认就是 true；需要完全手动控制 registry 时才设为 false。
   autoRenderers: true
 }
 ```
 
-严格裁剪或组件库内部测试时，也可以关闭自动注入并显式传入 virtual module：
+重度用户需要一次拥有官方 Demo 的完整能力时，直接安装全量 preset，仍然使用同一个 Vite 配置：
+
+```bash
+npm i @file-viewer/vue3 @file-viewer/core @file-viewer/vite-plugin @file-viewer/preset-all
+```
+
+需要自定义装配时，再显式配置插件：
 
 ```ts
+fileViewerRenderers({
+  preset: 'auto',        // 同时开启源码扫描时，仍自动发现已安装 preset
+  scan: true,            // 识别 fileViewerFormats、data-file-viewer-formats、accept
+  formats: ['pdf'],      // 在已安装 preset 之外额外补充精确 renderer
+  copyAssets: true,
+  chunkStrategy: 'renderer'
+})
+```
+
+严格裁剪或组件库内部测试时，可以关闭自动注入并显式传入 virtual module：
+
+```ts
+// vite.config.ts
+fileViewerRenderers({ formats: ['pdf'], inject: false, copyAssets: true })
+```
+
+```ts
+// 业务组件入口
 import { configuredFileViewerRenderers } from 'virtual:file-viewer-renderers'
 
 const options = {
@@ -133,10 +155,11 @@ const options = {
 - Vue、React、Svelte、jQuery、Vanilla JS / Pure Web 都传同一份 `options`，只是在各自生态中映射为 props、hook、action、plugin 或 `mountViewer(...)` 参数。
 - `preset-lite` 面向文本、Markdown、代码、图片和音视频；`preset-office` 面向 PDF / Word / Excel / PowerPoint / OFD；`preset-engineering` 面向 CAD / 3D / 绘图 / XMind / Geo / Typst / EDA / Data。
 - 想要最小包体时，可以不用 preset，直接安装 `@file-viewer/renderer-pdf`、`@file-viewer/renderer-word` 等单个 renderer，并用 `formats` 精确生成 import。
+- `fileViewerRenderers()` 或 `fileViewerRenderers({ copyAssets:true })` 会免配置自动发现已安装 preset；如果同时开启 `scan:true`，请使用 `preset:'auto'` 或 `autoPresets:true` 保留 preset 自动发现。
 - `scan:true` 会识别 `fileViewerFormats`、`data-file-viewer-formats` 和上传控件 `accept`，调试与打包时自动选择 renderer。
 - `copyAssets:true` 会复制 PDF/CAD/Typst/Archive/Data 等 worker、WASM 和 vendor 资源，满足离线和企业内网部署。
 - 如果打开的是支持矩阵内但未装配的格式，预览器会提示应安装的 preset / renderer；只有真正不在矩阵中的扩展名才提示不支持。
-- 想一次性拥有官方 Demo 的完整能力时，可以安装 `@file-viewer/preset-all` 并把 `allRenderers` 传给 `renderers`；这适合 demo 和后台运维工具，不建议作为所有业务默认入口。
+- `@file-viewer/preset-all` 是全量一键方案，适合 demo、后台运维工具和企业全格式附件中心；普通业务仍建议优先选择更窄的 preset。
 
 ## 统一参数与事件
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-24T08:34:58.783Z",
+  "generatedAt": "2026-06-24T12:03:40.942Z",
   "sourceBranch": "main",
-  "sourceCommit": "a7bef2b7",
+  "sourceCommit": "d09e9159",
   "organization": "flyfish-dev",
   "framework": "Vue 3",
   "packageName": "@file-viewer/vue3",

@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import {
   createFileViewerPreviewStateTarget,
   createFileViewerSourceLoadingActionHandlers,
+  translateFileViewerMessage,
 } from '@file-viewer/core'
 import type { FileViewerErrorMessageFormatter, FileViewerRequestController } from '@file-viewer/core'
 import type {
@@ -138,13 +139,14 @@ export const useViewerSourceLoading = ({
     getUrl,
     getCurrentFilename: () => filename.value,
     getPdfStreaming: () => getOptions()?.pdf?.streaming,
+    getI18n: getOptions,
     getPageHref: () => window.location.href,
     previewTarget: previewStateTarget,
     requestController,
     downloadFile: async ({ url: downloadUrl, signal }) => {
       const response = await fetch(downloadUrl, { signal })
       if (!response.ok) {
-        throw new Error(`文件下载失败: HTTP ${response.status}`)
+        throw new Error(`${translateFileViewerMessage(getOptions(), 'error.remoteDownload')}: HTTP ${response.status}`)
       }
       return response.blob()
     },

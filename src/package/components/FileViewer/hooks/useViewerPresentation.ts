@@ -21,6 +21,7 @@ interface UseViewerErrorStateOptions {
   currentExtend: ComputedRef<string>;
   error: ComputedRef<string>;
   loadingTheme: ComputedRef<FileViewerStateTheme>;
+  getOptions: () => FileViewerOptions | undefined;
 }
 
 /**
@@ -58,7 +59,8 @@ export const useViewerPresentation = ({
 export const useViewerErrorState = ({
   currentExtend,
   error,
-  loadingTheme
+  loadingTheme,
+  getOptions
 }: UseViewerErrorStateOptions) => {
-  return computed(() => createFileViewerErrorState(currentExtend.value, error.value, loadingTheme.value))
+  return computed(() => createFileViewerErrorState(currentExtend.value, error.value, loadingTheme.value, getOptions()))
 }

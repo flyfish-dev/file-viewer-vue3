@@ -1,7 +1,8 @@
 <script setup lang='ts'>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RotateCcw, ZoomIn, ZoomOut } from '@lucide/vue'
 import {
+  createFileViewerTranslator,
   createFileViewerRequestScope,
   reportFileViewerLifecycleHookError,
   reportFileViewerOperationError
@@ -32,6 +33,21 @@ const output = ref<HTMLDivElement | null>(null)
 const currentFile = ref<File | null>(null)
 const currentBuffer = ref<ArrayBuffer | null>(null)
 const currentSourceUrl = ref<string | null>(null)
+const viewerLabels = computed(() => {
+  const t = createFileViewerTranslator(props.options)
+  return {
+    zoomGroup: t('toolbar.zoomGroup'),
+    zoomOut: t('toolbar.zoomOut'),
+    zoomIn: t('toolbar.zoomIn'),
+    zoomReset: t('toolbar.zoomReset'),
+    download: t('toolbar.download'),
+    downloadTitle: t('toolbar.downloadTitle'),
+    print: t('toolbar.print'),
+    printTitle: t('toolbar.printTitle'),
+    exportHtml: t('toolbar.exportHtml'),
+    exportHtmlTitle: t('toolbar.exportHtmlTitle')
+  }
+})
 const {
   refreshDocumentIndex,
   clearDocumentState,
@@ -82,12 +98,13 @@ const {
   showError,
   clearError,
   resetLoading
-} = useLoading(currentExtend)
+} = useLoading(currentExtend, () => props.options)
 
 const errorState = useViewerErrorState({
   currentExtend,
   error,
-  loadingTheme
+  loadingTheme,
+  getOptions: () => props.options
 })
 
 const {
@@ -235,6 +252,7 @@ const {
   currentSourceUrl,
   displayFilename,
   formatErrorMessage,
+  getOptions: () => props.options,
   operationAvailability,
   output,
   runBeforeOperation,
@@ -284,14 +302,14 @@ useViewerPreviewLifecycle({
         :class='{ "viewer-actions--floating": toolbarPosition === "bottom-right" }'
         :data-toolbar-position='toolbarPosition'
       >
-        <div v-if='visibleToolbar.zoom' class='viewer-actions-group viewer-zoom-actions' aria-label='缩放控制'>
+        <div v-if='visibleToolbar.zoom' class='viewer-actions-group viewer-zoom-actions' :aria-label='viewerLabels.zoomGroup'>
           <button
             v-if='operationAvailability.zoomOut'
             type='button'
             class='viewer-icon-button'
             :disabled='zoomButtonDisabled("canZoomOut")'
-            title='缩小预览'
-            aria-label='缩小预览'
+            :title='viewerLabels.zoomOut'
+            :aria-label='viewerLabels.zoomOut'
             @click='zoomOut'
           >
             <ZoomOut :size='15' :stroke-width='2.4' />
@@ -301,7 +319,7 @@ useViewerPreviewLifecycle({
             type='button'
             class='viewer-zoom-meter'
             :disabled='zoomButtonDisabled("canReset")'
-            title='还原比例'
+            :title='viewerLabels.zoomReset'
             @click='resetZoom'
           >
             {{ zoomState.label }}
@@ -311,8 +329,8 @@ useViewerPreviewLifecycle({
             type='button'
             class='viewer-icon-button'
             :disabled='zoomButtonDisabled("canZoomIn")'
-            title='放大预览'
-            aria-label='放大预览'
+            :title='viewerLabels.zoomIn'
+            :aria-label='viewerLabels.zoomIn'
             @click='zoomIn'
           >
             <ZoomIn :size='15' :stroke-width='2.4' />
@@ -322,8 +340,8 @@ useViewerPreviewLifecycle({
             type='button'
             class='viewer-icon-button'
             :disabled='zoomButtonDisabled("canReset")'
-            title='还原比例'
-            aria-label='还原比例'
+            :title='viewerLabels.zoomReset'
+            :aria-label='viewerLabels.zoomReset'
             @click='resetZoom'
           >
             <RotateCcw :size='14' :stroke-width='2.4' />
@@ -333,28 +351,28 @@ useViewerPreviewLifecycle({
           v-if='visibleToolbar.download'
           type='button'
           :disabled='toolbarDisabled'
-          title='下载原始文件'
+          :title='viewerLabels.downloadTitle'
           @click='downloadOriginalFile'
         >
-          下载
+          {{ viewerLabels.download }}
         </button>
         <button
           v-if='visibleToolbar.print'
           type='button'
           :disabled='toolbarDisabled'
-          title='打印完整渲染内容'
+          :title='viewerLabels.printTitle'
           @click='printRenderedHtml'
         >
-          打印
+          {{ viewerLabels.print }}
         </button>
         <button
           v-if='visibleToolbar.exportHtml'
           type='button'
           :disabled='toolbarDisabled'
-          title='导出当前渲染后的 HTML'
+          :title='viewerLabels.exportHtmlTitle'
           @click='exportRenderedHtml'
         >
-          HTML
+          {{ viewerLabels.exportHtml }}
         </button>
       </div>
       <div class='viewer-content-shell'>

@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref, ShallowRef } from 'vue'
 import type {
   FileRenderExportAdapter,
+  FileViewerOptions,
   FileViewerOperationAvailability,
   FileViewerOperationType
 } from '@file-viewer/core'
@@ -15,6 +16,7 @@ interface UseViewerExportOptions {
   currentSourceUrl: Ref<string | null>;
   displayFilename: ComputedRef<string>;
   formatErrorMessage: (prefix: string, nextError: unknown) => string;
+  getOptions: () => FileViewerOptions | undefined;
   operationAvailability: ComputedRef<FileViewerOperationAvailability>;
   output: Ref<HTMLDivElement | null>;
   runBeforeOperation: (operation: FileViewerOperationType) => Promise<boolean>;
@@ -29,6 +31,7 @@ export const useViewerExport = ({
   currentSourceUrl,
   displayFilename,
   formatErrorMessage,
+  getOptions,
   operationAvailability,
   output,
   runBeforeOperation,
@@ -45,6 +48,7 @@ export const useViewerExport = ({
     getAdapter: () => activeExportAdapter.value,
     getWatermarkInlineStyle: () => watermarkInlineStyle.value,
     getPrintAvailable: () => operationAvailability.value.print,
+    getI18n: getOptions,
     beforeOperation: runBeforeOperation,
     formatErrorMessage,
     onErrorMessage: showError
