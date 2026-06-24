@@ -90,7 +90,7 @@ English README: [README.en.md](./README.en.md)。
 
 ## 工程级按需 renderer 装配
 
-一个组件，一行代码，快速集成；真正影响安装体积和首屏包体的是 renderer 装配。推荐优先按产品形态选择 `@file-viewer/preset-lite`、`@file-viewer/preset-office`、`@file-viewer/preset-engineering` 或 `@file-viewer/preset-all`，需要极致裁剪时再安装单个 renderer 包。Vite 插件负责生成 `virtual:file-viewer-renderers`，业务代码只传同一套 `options`。
+一个组件，一行代码，快速集成；真正影响安装体积和首屏包体的是 renderer 装配。推荐优先按产品形态选择 `@file-viewer/preset-lite`、`@file-viewer/preset-office`、`@file-viewer/preset-engineering` 或 `@file-viewer/preset-all`，需要极致裁剪时再安装单个 renderer 包。Vite 插件会自动发现并注入已安装的 preset，常规业务无需再手写 `renderers`。
 
 ```bash
 npm i @file-viewer/vue3 @file-viewer/core @file-viewer/vite-plugin @file-viewer/preset-office
@@ -105,10 +105,20 @@ export default {
       preset: 'office',
       scan: true,
       copyAssets: true
+      // 默认 inject:true，组件会自动获得 office 预览能力。
     })
   ]
 }
 ```
+
+```ts
+const options = {
+  // 可选：需要完全手动控制时设为 false。
+  autoRenderers: true
+}
+```
+
+严格裁剪或组件库内部测试时，也可以关闭自动注入并显式传入 virtual module：
 
 ```ts
 import { configuredFileViewerRenderers } from 'virtual:file-viewer-renderers'
@@ -125,6 +135,7 @@ const options = {
 - 想要最小包体时，可以不用 preset，直接安装 `@file-viewer/renderer-pdf`、`@file-viewer/renderer-word` 等单个 renderer，并用 `formats` 精确生成 import。
 - `scan:true` 会识别 `fileViewerFormats`、`data-file-viewer-formats` 和上传控件 `accept`，调试与打包时自动选择 renderer。
 - `copyAssets:true` 会复制 PDF/CAD/Typst/Archive/Data 等 worker、WASM 和 vendor 资源，满足离线和企业内网部署。
+- 如果打开的是支持矩阵内但未装配的格式，预览器会提示应安装的 preset / renderer；只有真正不在矩阵中的扩展名才提示不支持。
 - 想一次性拥有官方 Demo 的完整能力时，可以安装 `@file-viewer/preset-all` 并把 `allRenderers` 传给 `renderers`；这适合 demo 和后台运维工具，不建议作为所有业务默认入口。
 
 ## 统一参数与事件
