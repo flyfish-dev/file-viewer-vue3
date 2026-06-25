@@ -5,13 +5,16 @@ import {
   createFileViewerCoreRendererRegistry,
   createRendererRegistry,
   installFileViewerRendererPlugins,
+  listFileViewerAutoRendererPresets,
   normalizeSource,
   renderFileViewerHandler,
+  resolveFileViewerRendererPresetInputs,
   type FileRenderContext,
   type FileRenderHandler,
   type FileRenderHandlerRendererSession,
   type FileViewerRenderedInstance as Rendered,
   type FileViewerRendererPluginInput,
+  type FileViewerRendererPresetInput,
   type RendererRegistry,
 } from '@file-viewer/core'
 import { vueRendererDispatcher, vueRendererRegistry } from '../../vendors/renders'
@@ -19,6 +22,18 @@ import { vueRendererDispatcher, vueRendererRegistry } from '../../vendors/render
 export type FileViewerVueRenderSession = FileRenderHandlerRendererSession<Rendered | undefined>
 
 type VueRenderHandler = FileRenderHandler<Rendered, HTMLDivElement>
+type VueRendererPresetInput = FileViewerRendererPresetInput<VueRenderHandler>
+
+const resolveAutoRenderersEnabled = (options: FileRenderContext['options'] = {}) => {
+  const setting = options.autoRenderers
+  if (typeof setting === 'boolean') {
+    return setting
+  }
+  if (setting?.enabled !== undefined) {
+    return setting.enabled
+  }
+  return (options.rendererMode || 'extend') !== 'replace'
+}
 
 const createRendererRegistryForContext = async (
   context?: FileRenderContext
@@ -29,9 +44,24 @@ const createRendererRegistryForContext = async (
     : createFileViewerCoreRendererRegistry({
         builtinRenderers: options.builtinRenderers
       }).registry
-  const plugins = collectFileViewerRendererPlugins<VueRenderHandler>(
-    options.renderers as FileViewerRendererPluginInput<VueRenderHandler> | undefined
+  const rendererInputs: FileViewerRendererPluginInput<VueRenderHandler>[] = []
+
+  if (resolveAutoRenderersEnabled(options)) {
+    rendererInputs.push(...listFileViewerAutoRendererPresets<VueRenderHandler>())
+  }
+
+  const presetInput = options.preset as unknown as VueRendererPresetInput | undefined
+  const presetsInput = options.presets as unknown as VueRendererPresetInput | undefined
+  rendererInputs.push(
+    ...resolveFileViewerRendererPresetInputs<VueRenderHandler>(presetInput),
+    ...resolveFileViewerRendererPresetInputs<VueRenderHandler>(presetsInput)
   )
+
+  if (options.renderers) {
+    rendererInputs.push(options.renderers as FileViewerRendererPluginInput<VueRenderHandler>)
+  }
+
+  const plugins = collectFileViewerRendererPlugins<VueRenderHandler>(rendererInputs)
 
   if (!plugins.length) {
     return registry
