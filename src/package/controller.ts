@@ -7,6 +7,7 @@ import {
   resolveFileViewerSourceFilename,
   wrapFileViewerFileRef,
   type FileViewerAiOptions,
+  type FileViewerApplyViewStateOptions,
   type FileViewerArchiveOptions,
   type FileViewerCadOptions,
   type FileViewerDocxOptions,
@@ -31,6 +32,7 @@ import {
   type FileViewerToolbarOptions,
   type FileViewerToolbarPosition,
   type FileViewerTypstOptions,
+  type FileViewerViewState,
   type FileViewerWatermarkOptions,
   type FileViewerZoomState,
   type RendererRegistry,
@@ -50,6 +52,8 @@ export type ViewerTypstOptions = FileViewerTypstOptions;
 export type ViewerCadOptions = FileViewerCadOptions;
 export type ViewerSearchOptions = FileViewerSearchOptions;
 export type ViewerAiOptions = FileViewerAiOptions;
+export type ViewerViewState = FileViewerViewState;
+export type ViewerApplyViewStateOptions = FileViewerApplyViewStateOptions;
 export type ViewerThemeMode = FileViewerThemeMode;
 export type ViewerOptions = FileViewerOptions;
 export type ViewerEventType = FileViewerEventType;
@@ -68,6 +72,7 @@ export interface ViewerState {
   search: FileViewerSearchState | null;
   zoom: FileViewerZoomState | null;
   location: FileViewerDocumentAnchor | null;
+  viewState: FileViewerViewState | null;
 }
 
 export type ViewerStateListener = (
@@ -127,6 +132,11 @@ export interface ViewerController {
   zoomIn(): Promise<FileViewerZoomState | null>;
   zoomOut(): Promise<FileViewerZoomState | null>;
   resetZoom(): Promise<FileViewerZoomState | null>;
+  getViewState(): FileViewerViewState | null;
+  applyViewState(
+    state: FileViewerViewState,
+    options?: FileViewerApplyViewStateOptions
+  ): Promise<FileViewerViewState | null>;
   searchDocument(query: string): Promise<FileViewerSearchState | null>;
   clearDocumentSearch(): Promise<FileViewerSearchState | null>;
   nextSearchResult(): Promise<FileViewerSearchState | null>;
@@ -157,6 +167,11 @@ export interface ViewerControllerHandle {
   zoomIn(): Promise<FileViewerZoomState | null>;
   zoomOut(): Promise<FileViewerZoomState | null>;
   resetZoom(): Promise<FileViewerZoomState | null>;
+  getViewState(): FileViewerViewState | null;
+  applyViewState(
+    state: FileViewerViewState,
+    options?: FileViewerApplyViewStateOptions
+  ): Promise<FileViewerViewState | null>;
   searchDocument(query: string): Promise<FileViewerSearchState | null>;
   clearDocumentSearch(): Promise<FileViewerSearchState | null>;
   nextSearchResult(): Promise<FileViewerSearchState | null>;
@@ -310,6 +325,12 @@ export const createViewerControllerHandle = (
   resetZoom() {
     return getController()?.resetZoom() ?? Promise.resolve(null);
   },
+  getViewState() {
+    return getController()?.getViewState() ?? null;
+  },
+  applyViewState(state, options) {
+    return getController()?.applyViewState(state, options) ?? Promise.resolve(null);
+  },
   searchDocument(query) {
     return getController()?.searchDocument(query) ?? Promise.resolve(null);
   },
@@ -392,11 +413,23 @@ export const mountViewer = (
     search: null,
     zoom: null,
     location: null,
+    viewState: null,
   };
   const snapshotState = (): ViewerState => ({
     ...state,
     search: state.search
       ? { ...state.search, matches: [...state.search.matches] }
+      : null,
+    zoom: state.zoom ? { ...state.zoom } : null,
+    location: state.location ? { ...state.location } : null,
+    viewState: state.viewState
+      ? {
+          ...state.viewState,
+          zoom: state.viewState.zoom ? { ...state.viewState.zoom } : undefined,
+          scroll: state.viewState.scroll ? { ...state.viewState.scroll } : undefined,
+          navigation: state.viewState.navigation ? { ...state.viewState.navigation } : undefined,
+          extra: state.viewState.extra ? { ...state.viewState.extra } : undefined,
+        }
       : null,
   });
   const notifyState = (event?: ViewerEvent) => {
@@ -431,6 +464,8 @@ export const mountViewer = (
       state.location = event.payload;
     } else if (event.type === 'zoom-change') {
       state.zoom = event.payload;
+    } else if (event.type === 'view-state-change') {
+      state.viewState = event.payload.state;
     }
     currentOptions.onEvent?.(event);
     notifyState(event);
@@ -543,6 +578,12 @@ export const mountViewer = (
     },
     resetZoom() {
       return callApi(instance, api => api.resetZoom(), null);
+    },
+    getViewState() {
+      return instance.getViewState();
+    },
+    applyViewState(state, options) {
+      return callApi(instance, api => api.applyViewState(state, options), null);
     },
     searchDocument(query) {
       return callApi(instance, api => api.search(query), null);

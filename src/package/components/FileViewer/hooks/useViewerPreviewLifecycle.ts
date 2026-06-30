@@ -12,6 +12,7 @@ interface UseViewerPreviewLifecycleOptions {
   cancelPreview: (reason: FileViewerLifecycleContext['reason']) => void;
   resetLoading: () => void;
   stopZoomObserver: () => void;
+  stopViewStateObserver: () => void;
 }
 
 /**
@@ -26,7 +27,8 @@ export const useViewerPreviewLifecycle = ({
   refreshPreview,
   cancelPreview,
   resetLoading,
-  stopZoomObserver
+  stopZoomObserver,
+  stopViewStateObserver
 }: UseViewerPreviewLifecycleOptions) => {
   watch([getFile, getUrl], () => {
     void runFileViewerPreviewSourceChange({
@@ -38,7 +40,8 @@ export const useViewerPreviewLifecycle = ({
     runFileViewerPreviewComponentUnmount({
       onCancelPreview: cancelPreview,
       onResetLoading: resetLoading,
-      onStopZoomObserver: stopZoomObserver
+      onStopZoomObserver: stopZoomObserver,
+      onStopViewStateObserver: stopViewStateObserver
     })
   })
 }

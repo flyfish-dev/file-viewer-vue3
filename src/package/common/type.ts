@@ -38,6 +38,13 @@ import type {
   FileViewerToolbarOptions as CoreFileViewerToolbarOptions,
   FileViewerToolbarPosition as CoreFileViewerToolbarPosition,
   FileViewerTypstOptions as CoreFileViewerTypstOptions,
+  FileViewerApplyViewStateOptions as CoreFileViewerApplyViewStateOptions,
+  FileViewerViewScrollState as CoreFileViewerViewScrollState,
+  FileViewerViewState as CoreFileViewerViewState,
+  FileViewerViewStateChange as CoreFileViewerViewStateChange,
+  FileViewerViewStateChangeAction as CoreFileViewerViewStateChangeAction,
+  FileViewerViewStateChangeSource as CoreFileViewerViewStateChangeSource,
+  FileViewerViewStateProvider as CoreFileViewerViewStateProvider,
   FileViewerWatermarkOptions as CoreFileViewerWatermarkOptions,
   FileViewerZoomProvider as CoreFileViewerZoomProvider,
   FileViewerZoomState as CoreFileViewerZoomState
@@ -174,6 +181,27 @@ export type FileViewerZoomState = CoreFileViewerZoomState;
  * canvas、CAD 交互出现坐标偏移。
  */
 export type FileViewerZoomProvider = CoreFileViewerZoomProvider;
+
+/**
+ * 可同步/可恢复的预览视图状态。
+ *
+ * 目前 PDF renderer 会填充页码、页数、缩放、旋转、滚动和导航状态；投屏、
+ * 双端同步或阅读进度恢复可以监听 `view-state-change` 并将快照传给
+ * `applyViewState()`。
+ */
+export type FileViewerViewState = CoreFileViewerViewState;
+
+export type FileViewerViewScrollState = CoreFileViewerViewScrollState;
+
+export type FileViewerViewStateChange = CoreFileViewerViewStateChange;
+
+export type FileViewerViewStateChangeAction = CoreFileViewerViewStateChangeAction;
+
+export type FileViewerViewStateChangeSource = CoreFileViewerViewStateChangeSource;
+
+export type FileViewerApplyViewStateOptions = CoreFileViewerApplyViewStateOptions;
+
+export type FileViewerViewStateProvider = CoreFileViewerViewStateProvider;
 
 /**
  * AI 友好能力配置。

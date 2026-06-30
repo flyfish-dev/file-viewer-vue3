@@ -219,7 +219,7 @@ The table below lists the real props, event channel, and customization entry for
 | Component | Actual props / entry | Event channel | Customization entry |
 | --- | --- | --- | --- |
 | Vanilla JS / Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` attributes: `src/url`, `filename/name`, `type`, `size`, `theme`, `toolbar`, `toolbar-position`, `watermark`, `search`, `options`; also supports `mountViewer(...)` | `viewer-ready`, `viewer-event`, `viewer-state-change`, `viewer-error`, `onEvent`, `onStateChange`, `controller.subscribe()` | The Custom Element instance exposes the full controller handle; the IIFE script auto-registers it while keeping imperative `mountViewer` and the asset copy CLI. |
-| Vue 3 `@file-viewer/vue3` | `url`, `file`, `options` | `load-start`, `load-complete`, `unload-start`, `unload-complete`, `operation-before`, `operation-cancel`, `operation-availability-change`, `search-change`, `location-change`, `zoom-change` | Template refs expose `FileViewerExpose`. For `Blob` / `ArrayBuffer`, prefer wrapping it as a named `File` so extension detection stays deterministic. |
+| Vue 3 `@file-viewer/vue3` | `url`, `file`, `options` | `load-start`, `load-complete`, `unload-start`, `unload-complete`, `operation-before`, `operation-cancel`, `operation-availability-change`, `search-change`, `location-change`, `zoom-change`, `view-state-change` | Template refs expose `FileViewerExpose`. For `Blob` / `ArrayBuffer`, prefer wrapping it as a named `File` so extension detection stays deterministic. |
 | Vue 2.7 `@file-viewer/vue2.7` | `url`, `file`, `buffer`, `name`, `filename`, `type`, `size`, `options`, `containerClass`, `containerStyle` | `viewer-event` / `viewerEvent` | The component instance exposes the full controller handle. This is the Vue 2.7 line behind the historical `@flyfish-group/file-viewer` package. |
 | Vue 2.6 `@file-viewer/vue2.6` | Same as Vue 2.7 | `viewer-event` / `viewerEvent` | Separate Vue 2.6 build for long-lived applications that cannot move to Vue 2.7. |
 | React `@file-viewer/react` | `ViewerMountOptions` plus native `div` props such as `className`, `style`, `data-*`, and `aria-*` | `onEvent`, `onStateChange` | `ref` exposes `FileViewerHandle`; `useFileViewer()` returns `ref`, `props`, `state`, and `handle` for custom toolbars. |
@@ -253,6 +253,10 @@ The table below lists the real props, event channel, and customization entry for
 
 For fully custom toolbars, hide the built-in toolbar and call the standard ref / controller APIs from your own UI. Do not implement zoom with an outer CSS `transform: scale()`; PDF, Excel, CAD, canvas-based, and text-layer renderers should use their internal zoom providers to keep coordinates correct.
 
+Zoom state is reported by each renderer provider. After first-screen fit, container resize, or asynchronous PDF / Word / image layout, built-in toolbars show the real scale instead of assuming `100%`. Custom toolbars should listen to `zoom-change` / `operation-availability-change`, or read `getZoomState()` / `getOperationAvailability()`.
+
+View-state sync is designed for projection systems, remote-control displays, side-by-side review, and reading-position restore. Every standard renderer loader gets a generic view-state provider that records at least `renderer`, zoom, and scroll position; PDF, XMind, Geo, 3D, and CAD add page, navigation, canvas pan, map center, camera, or native view snapshots. Pass `options.initialViewState` for first render, listen to `view-state-change` while running, and use `getViewState()` / `applyViewState(state, { source: "api", action: "restore" })` on Pure Web / Vue3 controllers when an imperative restore API is needed.
+
 | Ecosystem | Recommended pattern |
 | --- | --- |
 | Vanilla JS / Pure Web | Use `<flyfish-file-viewer toolbar="false">` or `mountViewer(container, { options:{ toolbar:false }, onStateChange })`; custom DOM buttons can call `zoomIn()`, `printRenderedHtml()`, `searchDocument()`, and other element / controller methods directly. Use `viewer-state-change` or `controller.subscribe()` for advanced state sync. |
@@ -272,7 +276,7 @@ For fully custom toolbars, hide the built-in toolbar and call the standard ref /
 | `unload-complete` / `hooks.onUnloadComplete` | Fires after the previous document is released. The reason is `replace`, `reset`, or `component-unmount`. |
 | `operation-before` / `operation-cancel` | Fires around download, print, HTML export, and zoom actions. Returning `false` from `beforeOperation` cancels the action. |
 | `operation-availability-change` | Fires when download, print, HTML export, or zoom support changes for the active format. |
-| `search-change` / `location-change` / `zoom-change` | Fires when search matches, document anchors, or zoom state changes so host UIs can stay in sync. |
+| `search-change` / `location-change` / `zoom-change` / `view-state-change` | Fires when search matches, document anchors, zoom state, or full view-state snapshots change so host UIs, display screens, and reading-position restore flows can stay in sync. |
 
 ## Public Operation API
 
@@ -294,10 +298,10 @@ For fully custom toolbars, hide the built-in toolbar and call the standard ref /
 | --- | --- |
 | Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
 | CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
-| PDF / DOCX / Excel | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, and `options.spreadsheet.workerUrl`; PDF probes the real static worker first and lazy-loads the packaged handler when unavailable; DOCX chooses worker or main-thread parsing automatically, Electron `file://` and other unsafe local protocols fall back without user configuration; Excel defaults to `worker: auto`, enabling Worker automatically for files at or above `workerAutoThreshold`, and header drag column resizing is controlled by `options.spreadsheet.resizableColumns`. |
+| PDF / DOCX / Excel / PPTX | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, `options.spreadsheet.workerUrl`, and `options.presentation.workerUrl` / `options.presentation.workerType`; PDF probes the real static worker first and lazy-loads the packaged handler when unavailable; DOCX chooses worker or main-thread parsing automatically, Electron `file://` and other unsafe local protocols fall back without user configuration; Excel defaults to `worker: auto`, enabling Worker automatically for files at or above `workerAutoThreshold`, and header drag column resizing is controlled by `options.spreadsheet.resizableColumns`; PPTX creates a module Worker on demand and can pin the worker URL/type for strict CSP, legacy WebViews, or self-hosted CDNs. |
 | Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed; Typst renders through local WASM only and never falls back to a public CDN. |
 | Drawing | Draw.io uses the official diagrams.net offline viewer shipped with viewer assets by default; override `options.drawing.viewerScriptUrl` for custom paths, or set `preferOfficial:false` for the built-in SVG fallback. |
-| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, DOCX worker/JSZip, and Office worker/vendor assets. |
+| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, DOCX worker/JSZip, PPTX worker, and Office worker/vendor assets. |
 | Deployment principle | Heavy workers, WASM files, and parser libraries stay lazy-loaded and are only requested when the active file type needs them. |
 
 ## Quality Gates

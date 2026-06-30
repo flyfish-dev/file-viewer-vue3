@@ -1,5 +1,6 @@
 import { reactive, type Ref } from 'vue'
 import {
+  applyFileViewerZoomState,
   createFileViewerZoomController,
   createFileViewerZoomControllerActionHandlers,
   createFileViewerZoomState,
@@ -27,7 +28,10 @@ export const useViewerZoom = ({
   const controller = createFileViewerZoomController({
     root: () => output.value,
     enabled,
-    beforeZoom: operation => runBeforeOperation(operation)
+    beforeZoom: operation => runBeforeOperation(operation),
+    onChange: nextState => {
+      applyFileViewerZoomState(state, nextState)
+    }
   })
   const actions = createFileViewerZoomControllerActionHandlers(state, controller)
 

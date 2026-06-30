@@ -78,6 +78,7 @@ const createRendererRegistryForContext = async (
         ...definition,
         load: createFileRenderHandlerLoader({
           handler: registration.handler,
+          rendererId: definition.id,
           getTarget: loadContext => loadContext.surface.container as HTMLDivElement
         })
       })

@@ -30,6 +30,10 @@ interface UseViewerRenderSurfaceOptions {
   stopZoomObserver: () => void;
   clearZoomProvider: () => void;
   refreshZoomProvider: () => void;
+  startViewStateObserver: () => void;
+  stopViewStateObserver: () => void;
+  clearViewStateProvider: () => void;
+  refreshViewStateProvider: () => void;
 }
 
 /**
@@ -50,7 +54,11 @@ export const useViewerRenderSurface = ({
   startZoomObserver,
   stopZoomObserver,
   clearZoomProvider,
-  refreshZoomProvider
+  refreshZoomProvider,
+  startViewStateObserver,
+  stopViewStateObserver,
+  clearViewStateProvider,
+  refreshViewStateProvider
 }: UseViewerRenderSurfaceOptions) => {
   const activeExportAdapter = shallowRef<FileRenderExportAdapter | null>(null)
   const renderedReady = ref(false)
@@ -100,8 +108,12 @@ export const useViewerRenderSurface = ({
     onStartZoomObserver: startZoomObserver,
     onStopZoomObserver: stopZoomObserver,
     onClearZoomProvider: clearZoomProvider,
+    onStartViewStateObserver: startViewStateObserver,
+    onStopViewStateObserver: stopViewStateObserver,
+    onClearViewStateProvider: clearViewStateProvider,
     onRefreshDocumentIndex: refreshDocumentIndex,
     onRefreshZoomProvider: refreshZoomProvider,
+    onRefreshViewStateProvider: refreshViewStateProvider,
     render: async ({
       buffer: nextBuffer,
       type,

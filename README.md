@@ -222,7 +222,7 @@ const options = {
 | 组件 | 实际属性 / 入口 | 事件入口 | 定制入口 |
 | --- | --- | --- | --- |
 | Vanilla JS / Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` 属性 `src/url`、`filename/name`、`type`、`size`、`theme`、`toolbar`、`toolbar-position`、`watermark`、`search`、`options`；也支持 `mountViewer(...)` | `viewer-ready`、`viewer-event`、`viewer-state-change`、`viewer-error`、`onEvent`、`onStateChange`、`controller.subscribe()` | Custom Element 实例暴露完整 controller handle；IIFE script 标签会自动注册元素，同时保留 `mountViewer` 命令式挂载和资源复制 CLI。 |
-| Vue 3 `@file-viewer/vue3` | `url`、`file`、`options` | `load-start`、`load-complete`、`unload-start`、`unload-complete`、`operation-before`、`operation-cancel`、`operation-availability-change`、`search-change`、`location-change`、`zoom-change` | 模板 `ref` 暴露 `FileViewerExpose`；适合声明式接入。`Blob` / `ArrayBuffer` 建议包装成带扩展名的 `File` 后传给 `file`。 |
+| Vue 3 `@file-viewer/vue3` | `url`、`file`、`options` | `load-start`、`load-complete`、`unload-start`、`unload-complete`、`operation-before`、`operation-cancel`、`operation-availability-change`、`search-change`、`location-change`、`zoom-change`、`view-state-change` | 模板 `ref` 暴露 `FileViewerExpose`；适合声明式接入。`Blob` / `ArrayBuffer` 建议包装成带扩展名的 `File` 后传给 `file`。 |
 | Vue 2.7 `@file-viewer/vue2.7` | `url`、`file`、`buffer`、`name`、`filename`、`type`、`size`、`options`、`containerClass`、`containerStyle` | `viewer-event` / `viewerEvent` | 组件实例暴露 controller handle 全量方法；适合 Vue 2.7 项目和历史 `@flyfish-group/file-viewer` 平滑升级。 |
 | Vue 2.6 `@file-viewer/vue2.6` | 同 Vue 2.7 | `viewer-event` / `viewerEvent` | 独立 Vue 2.6 构建，不要求业务升级到 Vue 2.7。 |
 | React `@file-viewer/react` | `ViewerMountOptions` + `div` 原生属性，如 `className`、`style`、`data-*`、`aria-*` | `onEvent`、`onStateChange` | `ref` 暴露 `FileViewerHandle`；`useFileViewer()` 会返回 `ref`、`props`、`state`、`handle`，便于自定义工具栏。 |
@@ -256,6 +256,10 @@ const options = {
 
 完全自定义工具栏时，推荐关闭内置工具栏并使用组件 ref / controller 暴露的标准 API。不要在预览器外层用 CSS `transform: scale()` 做缩放；PDF、Excel、CAD、canvas 和文本层格式都应通过内部缩放 provider 保持坐标正确。
 
+缩放状态由各格式 renderer 的内部 provider 上报。首屏自适应、容器尺寸变化或 PDF / Word / 图片等异步布局完成后，内置工具栏会显示真实缩放比例，而不是固定显示 `100%`；自定义工具栏也应监听 `zoom-change` / `operation-availability-change`，或读取 `getZoomState()` / `getOperationAvailability()`。
+
+视图状态同步用于投屏、双端协同和恢复阅读进度。所有标准 renderer loader 都会获得通用 view-state provider，至少记录 `renderer`、缩放和滚动位置；PDF、XMind、Geo、3D、CAD 等高交互路径会补充页码、导航、画布 pan、地图中心、相机视角或底层视图快照。初始化可传 `options.initialViewState`，运行中监听 `view-state-change`；Pure Web / Vue3 controller 还可直接调用 `getViewState()` 与 `applyViewState(state, { source: "api", action: "restore" })`。
+
 | 生态 | 推荐方式 |
 | --- | --- |
 | Vanilla JS / Pure Web | `<flyfish-file-viewer toolbar="false">` 或 `mountViewer(container, { options:{ toolbar:false }, onStateChange })`；外部 DOM 按钮可直接调用元素实例 / controller 的 `zoomIn()`、`printRenderedHtml()`、`searchDocument()` 等方法，复杂场景用 `viewer-state-change` 或 `controller.subscribe()` 同步状态。 |
@@ -275,7 +279,7 @@ const options = {
 | `unload-complete` / `hooks.onUnloadComplete` | 旧文档释放完成后触发，reason 会标识 `replace`、`reset` 或 `component-unmount`。 |
 | `operation-before` / `operation-cancel` | 下载、打印、HTML 导出和缩放前后触发；`beforeOperation` 返回 `false` 可取消操作。 |
 | `operation-availability-change` | 当前格式是否可下载、可打印、可导出 HTML、可缩放发生变化时触发。 |
-| `search-change` / `location-change` / `zoom-change` | 搜索命中、定位锚点和缩放状态变化时触发，用于外层同步 UI。 |
+| `search-change` / `location-change` / `zoom-change` / `view-state-change` | 搜索命中、定位锚点、缩放状态和完整视图快照变化时触发，用于外层同步 UI、投屏或恢复阅读进度。 |
 
 ## 公共操作 API
 
@@ -297,10 +301,10 @@ const options = {
 | --- | --- |
 | 通用 viewer assets | Pure Web 包提供 `file-viewer-copy-assets`，可把 Worker、WASM、vendor 和示例资源复制到业务静态目录。 |
 | CAD / DWG / DXF / DWF | 按需配置 `options.cad.wasmPath`、`workerUrl`、`dwfWasmUrl`、`dxfEncoding`，支持自托管和内网部署。 |
-| PDF / DOCX / Excel | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启。 |
+| PDF / DOCX / Excel / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `options.presentation.workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；PPTX 默认按需创建模块 Worker，严格 CSP、旧 WebView 或自托管 CDN 场景可固定 Worker 地址。 |
 | Typst / SQLite / Archive | 按需配置 Typst compiler/renderer WASM、`data.sqlWasmUrl`、`archive.workerUrl` / `archive.wasmUrl`；Typst 仅使用本地 WASM 真实渲染，不访问公共 CDN。 |
 | Drawing | Draw.io 默认使用随 viewer assets 分发的官方 diagrams.net 离线 viewer；路径特殊时可通过 `options.drawing.viewerScriptUrl` 覆盖，`preferOfficial:false` 才切到内置 SVG 兜底。 |
-| 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；`file-viewer-copy-assets` 会复制 PDF、CAD、Typst、SQLite、压缩包、Draw.io、DOCX worker/JSZip 和 Office worker/vendor 资产。 |
+| 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；`file-viewer-copy-assets` 会复制 PDF、CAD、Typst、SQLite、压缩包、Draw.io、DOCX worker/JSZip、PPTX worker 和 Office worker/vendor 资产。 |
 | 部署原则 | 默认只在命中特定格式时异步加载对应依赖；没有命中的格式不会拉取重型 Worker、WASM 或解析库。 |
 
 ## 质量门禁
