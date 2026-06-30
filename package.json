@@ -1,6 +1,6 @@
 {
   "name": "@file-viewer/vue3",
-  "version": "2.1.13",
+  "version": "2.1.14",
   "private": false,
   "type": "module",
   "packageManager": "pnpm@11.0.9",
@@ -57,7 +57,7 @@
   },
   "types": "dist/src/package/index.d.ts",
   "dependencies": {
-    "@file-viewer/core": "^2.1.13",
+    "@file-viewer/core": "^2.1.14",
     "@lucide/vue": "^1.17.0",
     "vue": "^3.5.35"
   },
