@@ -17,6 +17,9 @@ import {
   type FileViewerEventHandler,
   type FileViewerEventType,
   type FileViewerFileRef,
+  type FileViewerFitMode,
+  type FileViewerFitOptions,
+  type FileViewerFitResult,
   type FileViewerInstance,
   type FileViewerLifecycleContext,
   type FileViewerOperationAvailability,
@@ -52,6 +55,9 @@ export type ViewerTypstOptions = FileViewerTypstOptions;
 export type ViewerCadOptions = FileViewerCadOptions;
 export type ViewerSearchOptions = FileViewerSearchOptions;
 export type ViewerAiOptions = FileViewerAiOptions;
+export type ViewerFitMode = FileViewerFitMode;
+export type ViewerFitOptions = FileViewerFitOptions;
+export type ViewerFitResult = FileViewerFitResult;
 export type ViewerViewState = FileViewerViewState;
 export type ViewerApplyViewStateOptions = FileViewerApplyViewStateOptions;
 export type ViewerThemeMode = FileViewerThemeMode;
@@ -132,6 +138,7 @@ export interface ViewerController {
   zoomIn(): Promise<FileViewerZoomState | null>;
   zoomOut(): Promise<FileViewerZoomState | null>;
   resetZoom(): Promise<FileViewerZoomState | null>;
+  fitToView(fit?: FileViewerFitMode | FileViewerFitOptions): Promise<FileViewerFitResult | null>;
   getViewState(): FileViewerViewState | null;
   applyViewState(
     state: FileViewerViewState,
@@ -167,6 +174,7 @@ export interface ViewerControllerHandle {
   zoomIn(): Promise<FileViewerZoomState | null>;
   zoomOut(): Promise<FileViewerZoomState | null>;
   resetZoom(): Promise<FileViewerZoomState | null>;
+  fitToView(fit?: FileViewerFitMode | FileViewerFitOptions): Promise<FileViewerFitResult | null>;
   getViewState(): FileViewerViewState | null;
   applyViewState(
     state: FileViewerViewState,
@@ -324,6 +332,9 @@ export const createViewerControllerHandle = (
   },
   resetZoom() {
     return getController()?.resetZoom() ?? Promise.resolve(null);
+  },
+  fitToView(fit) {
+    return getController()?.fitToView(fit) ?? Promise.resolve(null);
   },
   getViewState() {
     return getController()?.getViewState() ?? null;
@@ -494,6 +505,9 @@ export const mountViewer = (
         fetchFile: coreOptions.fetchFile,
         signal: controller?.signal,
       });
+      if (disposed || controller?.signal.aborted || abortController !== controller) {
+        return null;
+      }
       return await instance.load(resolvedSource);
     } catch (error) {
       if (isAbortError(error) && controller?.signal.aborted) {
@@ -578,6 +592,9 @@ export const mountViewer = (
     },
     resetZoom() {
       return callApi(instance, api => api.resetZoom(), null);
+    },
+    fitToView(fit) {
+      return callApi(instance, api => api.fitToView(fit), null);
     },
     getViewState() {
       return instance.getViewState();

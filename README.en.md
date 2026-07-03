@@ -32,7 +32,9 @@ createApp(App).use(FileViewer).mount('#app')
 </template>
 ```
 
-The component instance exposes `downloadOriginalFile()`, `printRenderedHtml()`, `exportRenderedHtml()`, `zoomIn()`, `zoomOut()`, `resetZoom()`, `searchDocument()`, `clearDocumentSearch()`, `nextSearchResult()`, `previousSearchResult()`, `collectDocumentAnchors()`, `scrollToAnchor()`, `scrollToLine()`, and `getDocumentTextChunks()`. The historical packages `@flyfish-group/file-viewer3` and `file-viewer3` remain supported for compatibility with existing projects; new integrations should prefer the standard component package package `@file-viewer/vue3`.
+The component instance exposes `destroy()`, `downloadOriginalFile()`, `printRenderedHtml()`, `exportRenderedHtml()`, `zoomIn()`, `zoomOut()`, `resetZoom()`, `searchDocument()`, `clearDocumentSearch()`, `nextSearchResult()`, `previousSearchResult()`, `collectDocumentAnchors()`, `scrollToAnchor()`, `scrollToLine()`, and `getDocumentTextChunks()`. The historical packages `@flyfish-group/file-viewer3` and `file-viewer3` remain supported for compatibility with existing projects; new integrations should prefer the standard component package package `@file-viewer/vue3`.
+
+The Vue 3 component follows host lifecycle teardown. Inside Element Plus `el-dialog destroy-on-close`, `v-if`, route tabs, or drawers, unmounting the component cancels active loading, destroys the renderer session, clears the rendered DOM, and emits `unload-complete` with `reason: "component-unmount"`. If a dialog only hides the component, such as `v-show` or no `destroy-on-close`, the active document stays mounted. For explicit cleanup while keeping the surrounding component alive, call `viewerRef.value?.destroy()` through the template ref.
 
 ## Capabilities
 
@@ -210,6 +212,7 @@ Every ecosystem package uses the same `ViewerMountOptions` and `FileViewerOption
 | `type` | Explicit extension or MIME hint that overrides automatic detection. |
 | `size` | File size hint used in lifecycle context, loading states, and safety limits. |
 | `options` | The shared `FileViewerOptions` surface. Every component package keeps the same semantics. |
+| `options.styleIsolation` | `auto`, `shadow`, `scoped`, or `none`. Pure Web / IIFE / Custom Element entries default to strong isolation; framework packages keep compatibility by default and can opt renderer content into a ShadowRoot. |
 | `onEvent` / `onStateChange` | Unified event and state subscriptions for imperative wrappers such as Vanilla JavaScript / Pure Web, React, and Svelte. Vue maps the same events to native emits. |
 
 ## Actual Component Props
@@ -230,6 +233,7 @@ The table below lists the real props, event channel, and customization entry for
 | Options Field | Description |
 | --- | --- |
 | `theme` | `light`, `dark`, or `system`. This takes precedence over browser `prefers-color-scheme`. |
+| `styleIsolation` | `auto`, `shadow`, `scoped`, or `none`. With `auto`, Web Component / full / IIFE entries use Shadow DOM by default; Vue, React, Svelte, and jQuery keep light-DOM compatibility unless renderer content is explicitly isolated with `shadow`. |
 | `watermark` | Text or image watermark with opacity, rotation, gap, size, font, and color controls. |
 | `toolbar` | Controls download, print, HTML export, zoom, toolbar position, and operation-level preflight checks. |
 | `search` | Document search, highlight class names, case sensitivity, whole-word matching, max matches, and debounce. |
@@ -240,6 +244,47 @@ The table below lists the real props, event channel, and customization entry for
 | `typst` / `data` / `cad` | Typst, SQLite, CAD/DWG/DXF/DWF WASM, worker, encoding, and rendering strategy options. |
 | `hooks` / `beforeOperation` | Shared lifecycle hooks and operation preflight checks for audit, permission, telemetry, and safety controls. |
 
+## Style Isolation And Theme Customization
+
+For OA systems, low-code shells, micro-frontends, portals, and admin products, prefer the strong Shadow DOM isolation used by Pure Web / Web Component and full packages by default. Host-page global rules for `*`, `button`, `table`, `img`, `svg`, `canvas`, and similar selectors should not leak into the viewer toolbar or rendered content, and viewer resets should not pollute the host page.
+
+| Mode | Description |
+| --- | --- |
+| `auto` | Default. `@file-viewer/web`, `@file-viewer/web-full`, IIFE, and `<flyfish-file-viewer>` use Shadow DOM by default. Vue, React, Svelte, and jQuery keep light-DOM compatibility for existing projects while renderer content can still be isolated by core. |
+| `shadow` | Creates an explicit ShadowRoot render surface. Use it when host CSS is uncontrolled, micro-frontends are mixed, low-code platforms inject global resets, or design systems have aggressive base styles. |
+| `scoped` | Does not create a ShadowRoot. Uses a stable root selector, `@layer file-viewer`, and local resets to constrain cascade impact while keeping controlled inheritance from the host. |
+| `none` | Historical light-DOM behavior for projects that depend on deep class overrides, old theme CSS, or snapshot tests. |
+
+Customization should start with `--file-viewer-*` CSS variables for color, typography, spacing, radius, toolbar, and button styling. Use stable Shadow Parts only when a specific internal surface needs styling. The current Web shell exposes `host`, `shell`, `toolbar`, `toolbar-group`, `toolbar-status`, `button`, `input`, and `content`; renderer extensions should keep using stable names such as `state-panel` and `watermark`. Do not depend on internal class names; they are implementation details.
+
+```css
+flyfish-file-viewer {
+  --file-viewer-bg: #f7f9fc;
+  --file-viewer-text: #172033;
+  --file-viewer-toolbar-bg: rgba(255, 255, 255, 0.96);
+  --file-viewer-button-color: #154b83;
+  --file-viewer-button-radius: 6px;
+}
+
+flyfish-file-viewer::part(toolbar) {
+  border: 1px solid rgba(20, 60, 100, 0.14);
+}
+
+flyfish-file-viewer::part(button) {
+  font-weight: 600;
+}
+```
+
+Framework packages can opt into renderer isolation through the shared options object:
+
+```ts
+const options = {
+  styleIsolation: 'shadow',
+  theme: 'light',
+  toolbar: { position: 'bottom-right' }
+}
+```
+
 ## Toolbar Customization
 
 | Config | Description |
@@ -247,7 +292,7 @@ The table below lists the real props, event channel, and customization entry for
 | `toolbar: false` | Hides the built-in toolbar without disabling controller APIs such as download, print, export, and zoom. Use this for a fully custom business toolbar. |
 | `toolbar: true` | Uses the default built-in toolbar. Download, print, HTML export, and zoom buttons are still shown only when the active renderer supports them. |
 | `download` / `print` / `exportHtml` / `zoom` | Expresses whether the host allows a button. Final availability is still computed from file type, render readiness, export adapter, and zoom provider state. |
-| `position` | `auto`, `top`, or `bottom-right`. The default `auto` floats PDF actions at bottom right to avoid conflicting with the PDF page / outline toolbar. |
+| `position` | `auto`, `top`, `top-center`, or `bottom-right`. The default `auto` floats PDF actions at bottom right and keeps other formats top-right; use `top-center` for a centered top toolbar. |
 | `beforeOperation` | Toolbar-level preflight that runs after `options.beforeOperation`. Returning `false` or throwing cancels the operation. |
 | `beforeDownload` / `beforePrint` / `beforeExportHtml` | Operation-specific preflight for download permission, print audit, export confirmation, and similar business rules. |
 

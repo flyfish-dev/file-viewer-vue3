@@ -32,7 +32,9 @@ createApp(App).use(FileViewer).mount('#app')
 </template>
 ```
 
-组件实例支持 `downloadOriginalFile()`、`printRenderedHtml()`、`exportRenderedHtml()`、`zoomIn()`、`zoomOut()`、`resetZoom()`、`searchDocument()`、`clearDocumentSearch()`、`nextSearchResult()`、`previousSearchResult()`、`collectDocumentAnchors()`、`scrollToAnchor()`、`scrollToLine()` 和 `getDocumentTextChunks()`。历史包名 `@flyfish-group/file-viewer3` 和 `file-viewer3` 会继续同步维护，用于兼容旧项目；新项目建议优先使用标准组件包 `@file-viewer/vue3`。
+组件实例支持 `destroy()`、`downloadOriginalFile()`、`printRenderedHtml()`、`exportRenderedHtml()`、`zoomIn()`、`zoomOut()`、`resetZoom()`、`searchDocument()`、`clearDocumentSearch()`、`nextSearchResult()`、`previousSearchResult()`、`collectDocumentAnchors()`、`scrollToAnchor()`、`scrollToLine()` 和 `getDocumentTextChunks()`。历史包名 `@flyfish-group/file-viewer3` 和 `file-viewer3` 会继续同步维护，用于兼容旧项目；新项目建议优先使用标准组件包 `@file-viewer/vue3`。
+
+Vue3 组件会跟随宿主生命周期自动释放资源。放在 Element Plus `el-dialog destroy-on-close`、`v-if`、路由页签或抽屉中时，组件卸载会取消当前加载、销毁 renderer session、清空预览 DOM，并触发 `unload-complete`，`reason` 为 `component-unmount`。如果弹窗只是隐藏组件，例如 `v-show` 或未开启 `destroy-on-close`，预览器会继续保留当前文档；需要主动释放时可通过模板 `ref` 调用 `viewerRef.value?.destroy()`。
 
 ## 能力范围
 
@@ -213,6 +215,7 @@ const options = {
 | `type` | 显式指定扩展名或 MIME 线索，覆盖自动识别结果。 |
 | `size` | 文件大小提示，用于生命周期上下文、加载状态和安全限制展示。 |
 | `options` | 完整 `FileViewerOptions`，所有框架包保持同一套参数语义。 |
+| `options.styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。Pure Web / IIFE / Custom Element 默认强隔离；框架组件默认保持历史兼容，可按需让 renderer 内容进入独立 ShadowRoot。 |
 | `onEvent` / `onStateChange` | Vanilla JS / Pure Web、React、Svelte 等命令式包装层的统一事件和状态订阅；Vue 组件会映射为原生 emit。 |
 
 ## 实际组件属性
@@ -233,6 +236,7 @@ const options = {
 | Options 字段 | 说明 |
 | --- | --- |
 | `theme` | `light`、`dark` 或 `system`，优先级高于浏览器 `prefers-color-scheme`。 |
+| `styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。`auto` 下 Web Component / full / IIFE 默认使用 Shadow DOM；Vue、React、Svelte、jQuery 默认保持 light DOM 兼容，但 renderer 内容可通过 `shadow` 获得独立渲染根。 |
 | `watermark` | 开启文字或图片水印，可设置透明度、旋转、间距、尺寸、字体和颜色。 |
 | `toolbar` | 控制下载、打印、HTML 导出、缩放和工具栏位置，并支持操作级前置校验。 |
 | `search` | 配置文档搜索、高亮 class、大小写、整词匹配、最大命中数和 debounce。 |
@@ -243,6 +247,47 @@ const options = {
 | `typst` / `data` / `cad` | 配置 Typst、SQLite、CAD/DWG/DXF/DWF 等 WASM、Worker、编码和渲染策略。 |
 | `hooks` / `beforeOperation` | 统一生命周期 hooks 和操作前置校验，可用于审计、权限、埋点和安全控制。 |
 
+## 样式隔离与主题定制
+
+推荐在 OA、低代码、微前端、门户和后台系统中优先使用 Pure Web / Web Component 或 full 包默认的 Shadow DOM 强隔离。宿主页面里的 `*`、`button`、`table`、`img`、`svg`、`canvas` 等全局样式不会直接侵入预览器工具栏和正文；预览器也不会把局部 reset 粗暴写到业务页面。
+
+| 模式 | 说明 |
+| --- | --- |
+| `auto` | 默认值。`@file-viewer/web`、`@file-viewer/web-full`、IIFE 和 `<flyfish-file-viewer>` 默认走 Shadow DOM；Vue、React、Svelte、jQuery 为兼容旧项目保持 light DOM，但 renderer 内容可由 core 按需隔离。 |
+| `shadow` | 显式创建 ShadowRoot 作为渲染面，适合宿主 CSS 不可控、微前端混挂、低代码平台和设计系统全局 reset 很强的页面。 |
+| `scoped` | 不创建 ShadowRoot，使用稳定根选择器、`@layer file-viewer` 和局部 reset 约束样式权重，适合需要被外层 CSS 轻度继承但又不想污染页面的场景。 |
+| `none` | 历史 light DOM 行为，保留给依赖深度 class 覆盖、旧主题 CSS 或自动化测试快照的项目。 |
+
+定制优先级建议是：先使用 `--file-viewer-*` CSS 变量覆盖颜色、字体、间距、圆角、工具栏和按钮；需要命中内部结构时再使用稳定 Shadow Parts。当前 Web shell 暴露 `host`、`shell`、`toolbar`、`toolbar-group`、`toolbar-status`、`button`、`input` 和 `content`，后续 renderer 扩展应继续使用 `state-panel`、`watermark` 这类稳定命名。不要依赖内部 class 名，它们只服务实现细节。
+
+```css
+flyfish-file-viewer {
+  --file-viewer-bg: #f7f9fc;
+  --file-viewer-text: #172033;
+  --file-viewer-toolbar-bg: rgba(255, 255, 255, 0.96);
+  --file-viewer-button-color: #154b83;
+  --file-viewer-button-radius: 6px;
+}
+
+flyfish-file-viewer::part(toolbar) {
+  border: 1px solid rgba(20, 60, 100, 0.14);
+}
+
+flyfish-file-viewer::part(button) {
+  font-weight: 600;
+}
+```
+
+框架组件的推荐写法是在 `options` 中显式声明隔离策略：
+
+```ts
+const options = {
+  styleIsolation: 'shadow',
+  theme: 'light',
+  toolbar: { position: 'bottom-right' }
+}
+```
+
 ## 工具栏定制
 
 | 配置 | 说明 |
@@ -250,7 +295,7 @@ const options = {
 | `toolbar: false` | 隐藏内置工具栏，但不关闭下载、打印、导出、缩放等 controller API，适合完全自定义业务工具栏。 |
 | `toolbar: true` | 使用默认内置工具栏，下载、打印、HTML 导出和缩放按钮都会按能力动态显隐。 |
 | `download` / `print` / `exportHtml` / `zoom` | 表达业务是否允许展示对应按钮；最终仍会结合文件类型、渲染完成状态、导出适配器和缩放 provider 计算真实可用性。 |
-| `position` | `auto`、`top`、`bottom-right`。默认 `auto`，PDF 自动悬浮右下角，减少和 PDF 自身页码 / 目录工具栏冲突。 |
+| `position` | `auto`、`top`、`top-center`、`bottom-right`。默认 `auto`，PDF 自动悬浮右下角，其他格式保持顶部靠右；需要顶部水平居中时传 `top-center`。 |
 | `beforeOperation` | 工具栏层统一前置校验，会在 `options.beforeOperation` 后执行。返回 `false` 或抛错都会取消本次操作。 |
 | `beforeDownload` / `beforePrint` / `beforeExportHtml` | 单按钮前置校验；适合下载权限、打印审计、导出水印确认等细粒度业务规则。 |
 

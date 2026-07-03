@@ -17,6 +17,7 @@ import type { FileViewerVueRenderSession } from '../rendererBridge'
 interface UseViewerSourceLoadingOptions {
   getFile: () => FileRef | undefined;
   getUrl: () => string | undefined;
+  getSourceFilename?: () => string | undefined;
   getOptions: () => FileViewerOptions | undefined;
   filename: Ref<string>;
   currentFile: Ref<File | null>;
@@ -69,6 +70,7 @@ interface UseViewerSourceLoadingOptions {
 export const useViewerSourceLoading = ({
   getFile,
   getUrl,
+  getSourceFilename,
   getOptions,
   filename,
   currentFile,
@@ -137,7 +139,7 @@ export const useViewerSourceLoading = ({
   const actions = createFileViewerSourceLoadingActionHandlers<FileViewerVueRenderSession>({
     getFile,
     getUrl,
-    getCurrentFilename: () => filename.value,
+    getCurrentFilename: () => getSourceFilename?.() || filename.value,
     getPdfStreaming: () => getOptions()?.pdf?.streaming,
     getI18n: getOptions,
     getPageHref: () => window.location.href,

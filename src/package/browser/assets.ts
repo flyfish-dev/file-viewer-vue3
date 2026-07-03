@@ -15,7 +15,7 @@ export const getBrowserFileViewerDocumentBaseUrl = () => {
   if (typeof location !== 'undefined' && location.href) {
     return location.href;
   }
-  return 'http://localhost/';
+  return 'file:///';
 };
 
 export const resolveBrowserFileViewerAssetUrl = (

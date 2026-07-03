@@ -14,6 +14,7 @@ import type {
 import { useLoading } from './hooks/useLoading'
 import { useViewerDocumentFeatures } from './hooks/useViewerDocumentFeatures'
 import { useViewerExport } from './hooks/useViewerExport'
+import { useViewerFit } from './hooks/useViewerFit'
 import { useViewerLifecycle } from './hooks/useViewerLifecycle'
 import { useViewerErrorState, useViewerPresentation } from './hooks/useViewerPresentation'
 import { useViewerPreviewLifecycle } from './hooks/useViewerPreviewLifecycle'
@@ -79,6 +80,7 @@ const {
   filename,
   getFile: () => props.file,
   getUrl: () => props.url,
+  getSourceFilename: () => props.filename || props.name,
   getOptions: () => props.options
 })
 
@@ -171,7 +173,29 @@ const {
   applyViewState
 } = useViewerViewState({
   output,
-  emitViewStateChange: change => emit('view-state-change', change)
+  emitViewStateChange: change => {
+    if (
+      (change.source === 'user' || change.source === 'api') &&
+      change.action !== 'fit'
+    ) {
+      markFitUserInteraction()
+    }
+    emit('view-state-change', change)
+  }
+})
+
+const {
+  startFitObserver,
+  stopFitObserver,
+  markFitUserInteraction,
+  applyInitialFit,
+  fitToView
+} = useViewerFit({
+  output,
+  getOptions: () => props.options,
+  refreshZoomProvider,
+  refreshViewStateProvider,
+  emitFitChange: result => emit('fit-change', result)
 })
 
 const {
@@ -195,6 +219,9 @@ const {
   stopZoomObserver,
   clearZoomProvider,
   refreshZoomProvider,
+  startFitObserver,
+  stopFitObserver,
+  applyInitialFit,
   startViewStateObserver,
   stopViewStateObserver,
   clearViewStateProvider,
@@ -204,6 +231,7 @@ const {
 const {
   operationAvailability,
   visibleToolbar,
+  toolbarOrder,
   showToolbar,
   toolbarPosition,
   toolbarDisabled,
@@ -231,6 +259,7 @@ const {
 } = useViewerSourceLoading({
   getFile: () => props.file,
   getUrl: () => props.url,
+  getSourceFilename: () => props.filename || props.name,
   getOptions: () => props.options,
   filename,
   currentFile,
@@ -277,16 +306,46 @@ const {
   watermarkInlineStyle
 })
 
+const zoomInByUser = async () => {
+  markFitUserInteraction()
+  return zoomIn()
+}
+
+const zoomOutByUser = async () => {
+  markFitUserInteraction()
+  return zoomOut()
+}
+
+const resetZoomByUser = async () => {
+  markFitUserInteraction()
+  return resetZoom()
+}
+
+const destroyViewer = () => {
+  cancelPreview('component-unmount')
+  resetLoading()
+  stopZoomObserver()
+  stopFitObserver()
+  stopViewStateObserver()
+}
+
 const publicApi = useViewerPublicApi({
+  destroy: () => {
+    destroyViewer()
+  },
   downloadOriginalFile,
   printRenderedHtml,
   exportRenderedHtml,
-  zoomIn,
-  zoomOut,
-  resetZoom,
+  zoomIn: zoomInByUser,
+  zoomOut: zoomOutByUser,
+  resetZoom: resetZoomByUser,
+  fitToView,
   getZoomState,
   getViewState,
-  applyViewState,
+  applyViewState: async (state, options) => {
+    markFitUserInteraction()
+    return applyViewState(state, options)
+  },
   operationAvailability,
   getScrollContainer,
   searchDocument,
@@ -305,10 +364,13 @@ defineExpose(publicApi)
 useViewerPreviewLifecycle({
   getFile: () => props.file,
   getUrl: () => props.url,
+  getSourceFilename: () => props.filename || props.name,
   refreshPreview,
   cancelPreview,
+  clearRenderedContent,
   resetLoading,
   stopZoomObserver,
+  stopFitObserver,
   stopViewStateObserver
 })
 </script>
@@ -322,86 +384,92 @@ useViewerPreviewLifecycle({
         :class='{ "viewer-actions--floating": toolbarPosition === "bottom-right" }'
         :data-toolbar-position='toolbarPosition'
       >
-        <div v-if='visibleToolbar.zoom' class='viewer-actions-group viewer-zoom-actions' :aria-label='viewerLabels.zoomGroup'>
-          <button
-            v-if='operationAvailability.zoomOut'
-            type='button'
-            class='viewer-icon-button'
-            :disabled='zoomButtonDisabled("canZoomOut")'
-            :title='viewerLabels.zoomOut'
-            :aria-label='viewerLabels.zoomOut'
-            @click='zoomOut'
+        <template v-for='toolbarItem in toolbarOrder' :key='toolbarItem'>
+          <div
+            v-if='toolbarItem === "zoom" && visibleToolbar.zoom'
+            class='viewer-actions-group viewer-zoom-actions'
+            :aria-label='viewerLabels.zoomGroup'
           >
-            <ZoomOut :size='15' :stroke-width='2.4' />
+            <button
+              v-if='operationAvailability.zoomOut'
+              type='button'
+              class='viewer-icon-button'
+              :disabled='zoomButtonDisabled("canZoomOut")'
+              :title='viewerLabels.zoomOut'
+              :aria-label='viewerLabels.zoomOut'
+              @click='zoomOutByUser'
+            >
+              <ZoomOut :size='15' :stroke-width='2.4' />
+            </button>
+            <button
+              v-if='operationAvailability.zoomReset'
+              type='button'
+              class='viewer-zoom-meter'
+              :disabled='zoomButtonDisabled("canReset")'
+              :title='viewerLabels.zoomReset'
+              @click='resetZoomByUser'
+            >
+              {{ zoomState.label }}
+            </button>
+            <span
+              v-else
+              class='viewer-zoom-meter viewer-zoom-meter--readonly'
+              :title='zoomState.label'
+              :aria-label='zoomState.label'
+            >
+              {{ zoomState.label }}
+            </span>
+            <button
+              v-if='operationAvailability.zoomIn'
+              type='button'
+              class='viewer-icon-button'
+              :disabled='zoomButtonDisabled("canZoomIn")'
+              :title='viewerLabels.zoomIn'
+              :aria-label='viewerLabels.zoomIn'
+              @click='zoomInByUser'
+            >
+              <ZoomIn :size='15' :stroke-width='2.4' />
+            </button>
+            <button
+              v-if='operationAvailability.zoomReset'
+              type='button'
+              class='viewer-icon-button'
+              :disabled='zoomButtonDisabled("canReset")'
+              :title='viewerLabels.zoomReset'
+              :aria-label='viewerLabels.zoomReset'
+              @click='resetZoomByUser'
+            >
+              <RotateCcw :size='14' :stroke-width='2.4' />
+            </button>
+          </div>
+          <button
+            v-else-if='toolbarItem === "download" && visibleToolbar.download'
+            type='button'
+            :disabled='toolbarDisabled'
+            :title='viewerLabels.downloadTitle'
+            @click='downloadOriginalFile'
+          >
+            {{ viewerLabels.download }}
           </button>
           <button
-            v-if='operationAvailability.zoomReset'
+            v-else-if='toolbarItem === "print" && visibleToolbar.print'
             type='button'
-            class='viewer-zoom-meter'
-            :disabled='zoomButtonDisabled("canReset")'
-            :title='viewerLabels.zoomReset'
-            @click='resetZoom'
+            :disabled='toolbarDisabled'
+            :title='viewerLabels.printTitle'
+            @click='printRenderedHtml'
           >
-            {{ zoomState.label }}
-          </button>
-          <span
-            v-else
-            class='viewer-zoom-meter viewer-zoom-meter--readonly'
-            :title='zoomState.label'
-            :aria-label='zoomState.label'
-          >
-            {{ zoomState.label }}
-          </span>
-          <button
-            v-if='operationAvailability.zoomIn'
-            type='button'
-            class='viewer-icon-button'
-            :disabled='zoomButtonDisabled("canZoomIn")'
-            :title='viewerLabels.zoomIn'
-            :aria-label='viewerLabels.zoomIn'
-            @click='zoomIn'
-          >
-            <ZoomIn :size='15' :stroke-width='2.4' />
+            {{ viewerLabels.print }}
           </button>
           <button
-            v-if='operationAvailability.zoomReset'
+            v-else-if='toolbarItem === "exportHtml" && visibleToolbar.exportHtml'
             type='button'
-            class='viewer-icon-button'
-            :disabled='zoomButtonDisabled("canReset")'
-            :title='viewerLabels.zoomReset'
-            :aria-label='viewerLabels.zoomReset'
-            @click='resetZoom'
+            :disabled='toolbarDisabled'
+            :title='viewerLabels.exportHtmlTitle'
+            @click='exportRenderedHtml'
           >
-            <RotateCcw :size='14' :stroke-width='2.4' />
+            {{ viewerLabels.exportHtml }}
           </button>
-        </div>
-        <button
-          v-if='visibleToolbar.download'
-          type='button'
-          :disabled='toolbarDisabled'
-          :title='viewerLabels.downloadTitle'
-          @click='downloadOriginalFile'
-        >
-          {{ viewerLabels.download }}
-        </button>
-        <button
-          v-if='visibleToolbar.print'
-          type='button'
-          :disabled='toolbarDisabled'
-          :title='viewerLabels.printTitle'
-          @click='printRenderedHtml'
-        >
-          {{ viewerLabels.print }}
-        </button>
-        <button
-          v-if='visibleToolbar.exportHtml'
-          type='button'
-          :disabled='toolbarDisabled'
-          :title='viewerLabels.exportHtmlTitle'
-          @click='exportRenderedHtml'
-        >
-          {{ viewerLabels.exportHtml }}
-        </button>
+        </template>
       </div>
       <div class='viewer-content-shell'>
         <div ref='output' class='content' data-viewer-scroll-root='true' :class='{ hidden: (loading && !progressiveReady) || !!error }' />
@@ -466,6 +534,10 @@ useViewerPreviewLifecycle({
   padding: 6px 10px;
   border-bottom: 1px solid rgba(20, 35, 53, 0.06);
   background: rgba(255, 255, 255, 0.92);
+}
+
+.viewer-actions[data-toolbar-position='top-center'] {
+  justify-content: center;
 }
 
 .viewer-actions--floating {

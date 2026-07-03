@@ -12,6 +12,10 @@ import type {
   FileViewerDocumentAnchor as CoreFileViewerDocumentAnchor,
   FileViewerDocumentChunk as CoreFileViewerDocumentChunk,
   FileViewerFileRef,
+  FileViewerFitMode as CoreFileViewerFitMode,
+  FileViewerFitOptions as CoreFileViewerFitOptions,
+  FileViewerFitResize as CoreFileViewerFitResize,
+  FileViewerFitResult as CoreFileViewerFitResult,
   FileViewerLifecycleContext as CoreFileViewerLifecycleContext,
   FileViewerLifecycleHooks as CoreFileViewerLifecycleHooks,
   FileViewerLifecyclePhase as CoreFileViewerLifecyclePhase,
@@ -84,7 +88,7 @@ export type FileViewerWatermarkOptions = CoreFileViewerWatermarkOptions;
  * 预览器内置操作栏位置。
  *
  * `auto` 是默认策略: PDF 这类有独立阅读工具栏的格式会自动悬浮到右下角，
- * 其他格式继续使用顶部操作栏；也可以显式传 `top` 或 `bottom-right`。
+ * 其他格式继续使用顶部操作栏；也可以显式传 `top`、`top-center` 或 `bottom-right`。
  */
 export type FileViewerToolbarPosition = CoreFileViewerToolbarPosition;
 
@@ -181,6 +185,14 @@ export type FileViewerZoomState = CoreFileViewerZoomState;
  * canvas、CAD 交互出现坐标偏移。
  */
 export type FileViewerZoomProvider = CoreFileViewerZoomProvider;
+
+export type FileViewerFitMode = CoreFileViewerFitMode;
+
+export type FileViewerFitResize = CoreFileViewerFitResize;
+
+export type FileViewerFitOptions = CoreFileViewerFitOptions;
+
+export type FileViewerFitResult = CoreFileViewerFitResult;
 
 /**
  * 可同步/可恢复的预览视图状态。

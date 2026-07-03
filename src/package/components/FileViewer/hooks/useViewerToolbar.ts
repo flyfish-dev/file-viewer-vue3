@@ -6,6 +6,7 @@ import type {
   FileRenderExportAdapter,
   FileViewerOperationAvailability,
   FileViewerOptions,
+  FileViewerResolvedToolbarItem,
   FileViewerToolbarOptions,
   FileViewerToolbarPosition,
   FileViewerZoomState
@@ -73,6 +74,7 @@ export const useViewerToolbar = ({
 
   const operationAvailability = computed<FileViewerOperationAvailability>(() => toolbarState.value.operationAvailability)
   const visibleToolbar = computed<FileViewerToolbarOptions>(() => toolbarState.value.visibleToolbar)
+  const toolbarOrder = computed<FileViewerResolvedToolbarItem[]>(() => toolbarState.value.toolbarOrder)
   const showToolbar = computed(() => toolbarState.value.showToolbar)
   const toolbarPosition = computed<FileViewerToolbarPosition>(() => toolbarState.value.toolbarPosition)
   const toolbarDisabled = computed(() => toolbarState.value.toolbarDisabled)
@@ -98,6 +100,7 @@ export const useViewerToolbar = ({
   return {
     operationAvailability,
     visibleToolbar,
+    toolbarOrder,
     showToolbar,
     toolbarPosition,
     toolbarDisabled,

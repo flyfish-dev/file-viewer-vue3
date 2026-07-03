@@ -113,7 +113,11 @@ export async function createVueRenderSession(
         type,
         url: context?.url
       }),
-      surface: { container: target },
+      surface: {
+        container: target,
+        shadowRoot: context?.surface?.shadowRoot,
+        styleIsolation: context?.surface?.styleIsolation
+      },
       options: context?.options || {},
       registerExportAdapter: context?.registerExportAdapter,
       renderContext: context

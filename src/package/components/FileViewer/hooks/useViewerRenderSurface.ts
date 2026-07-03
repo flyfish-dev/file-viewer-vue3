@@ -30,6 +30,9 @@ interface UseViewerRenderSurfaceOptions {
   stopZoomObserver: () => void;
   clearZoomProvider: () => void;
   refreshZoomProvider: () => void;
+  startFitObserver: () => void;
+  stopFitObserver: () => void;
+  applyInitialFit: () => Promise<unknown> | unknown;
   startViewStateObserver: () => void;
   stopViewStateObserver: () => void;
   clearViewStateProvider: () => void;
@@ -55,6 +58,9 @@ export const useViewerRenderSurface = ({
   stopZoomObserver,
   clearZoomProvider,
   refreshZoomProvider,
+  startFitObserver,
+  stopFitObserver,
+  applyInitialFit,
   startViewStateObserver,
   stopViewStateObserver,
   clearViewStateProvider,
@@ -108,6 +114,9 @@ export const useViewerRenderSurface = ({
     onStartZoomObserver: startZoomObserver,
     onStopZoomObserver: stopZoomObserver,
     onClearZoomProvider: clearZoomProvider,
+    onStartFitObserver: startFitObserver,
+    onStopFitObserver: stopFitObserver,
+    onApplyInitialFit: applyInitialFit,
     onStartViewStateObserver: startViewStateObserver,
     onStopViewStateObserver: stopViewStateObserver,
     onClearViewStateProvider: clearViewStateProvider,
