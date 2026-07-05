@@ -75,6 +75,7 @@ const {
   currentExtend,
   normalizedToolbar,
   viewerTheme,
+  viewerDensity,
   formatErrorMessage
 } = useViewerPresentation({
   filename,
@@ -376,7 +377,12 @@ useViewerPreviewLifecycle({
 </script>
 
 <template>
-  <div class='file-viewer' :data-viewer-theme='viewerTheme' :style='loadingVars'>
+  <div
+    class='file-viewer'
+    :data-viewer-theme='viewerTheme'
+    :data-viewer-density='viewerDensity'
+    :style='loadingVars'
+  >
     <div class='viewer-stage'>
       <div
         v-if='showToolbar'
@@ -506,8 +512,49 @@ useViewerPreviewLifecycle({
   height: 100%;
   display: flex;
   flex-direction: column;
+  --file-viewer-toolbar-gap: 6px;
+  --file-viewer-toolbar-min-height: 45px;
+  --file-viewer-toolbar-padding: 6px 10px;
+  --file-viewer-toolbar-floating-offset: 16px;
+  --file-viewer-toolbar-floating-min-height: 42px;
+  --file-viewer-toolbar-floating-padding: 6px;
+  --file-viewer-toolbar-group-gap: 2px;
+  --file-viewer-toolbar-group-padding: 2px;
+  --file-viewer-toolbar-button-min-width: 42px;
+  --file-viewer-toolbar-button-height: 30px;
+  --file-viewer-toolbar-button-padding: 0 10px;
+  --file-viewer-toolbar-button-radius: 8px;
+  --file-viewer-toolbar-icon-size: 30px;
+  --file-viewer-toolbar-meter-min-width: 48px;
+  --file-viewer-toolbar-meter-padding: 0 8px;
+  --file-viewer-toolbar-floating-button-min-width: 48px;
+  --file-viewer-toolbar-floating-button-height: 32px;
+  --file-viewer-toolbar-floating-icon-size: 32px;
+  --file-viewer-toolbar-floating-meter-min-width: 54px;
   background: #ffffff;
   color-scheme: light;
+}
+
+.file-viewer[data-viewer-density='compact'] {
+  --file-viewer-toolbar-gap: 3px;
+  --file-viewer-toolbar-min-height: 34px;
+  --file-viewer-toolbar-padding: 3px 5px;
+  --file-viewer-toolbar-floating-offset: 10px;
+  --file-viewer-toolbar-floating-min-height: 32px;
+  --file-viewer-toolbar-floating-padding: 3px;
+  --file-viewer-toolbar-group-gap: 2px;
+  --file-viewer-toolbar-group-padding: 2px;
+  --file-viewer-toolbar-button-min-width: 34px;
+  --file-viewer-toolbar-button-height: 26px;
+  --file-viewer-toolbar-button-padding: 0 6px;
+  --file-viewer-toolbar-button-radius: 6px;
+  --file-viewer-toolbar-icon-size: 26px;
+  --file-viewer-toolbar-meter-min-width: 42px;
+  --file-viewer-toolbar-meter-padding: 0 5px;
+  --file-viewer-toolbar-floating-button-min-width: 38px;
+  --file-viewer-toolbar-floating-button-height: 28px;
+  --file-viewer-toolbar-floating-icon-size: 28px;
+  --file-viewer-toolbar-floating-meter-min-width: 46px;
 }
 
 .file-viewer[data-viewer-theme='dark'] {
@@ -529,9 +576,9 @@ useViewerPreviewLifecycle({
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-  min-height: 45px;
-  padding: 6px 10px;
+  gap: var(--file-viewer-toolbar-gap);
+  min-height: var(--file-viewer-toolbar-min-height);
+  padding: var(--file-viewer-toolbar-padding);
   border-bottom: 1px solid rgba(20, 35, 53, 0.06);
   background: rgba(255, 255, 255, 0.92);
 }
@@ -543,10 +590,10 @@ useViewerPreviewLifecycle({
 .viewer-actions--floating {
   position: absolute;
   z-index: 30;
-  right: calc(16px + env(safe-area-inset-right, 0px));
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  min-height: 42px;
-  padding: 6px;
+  right: calc(var(--file-viewer-toolbar-floating-offset) + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--file-viewer-toolbar-floating-offset) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--file-viewer-toolbar-floating-min-height);
+  padding: var(--file-viewer-toolbar-floating-padding);
   border: 1px solid rgba(20, 35, 53, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
@@ -557,19 +604,19 @@ useViewerPreviewLifecycle({
 .viewer-actions-group {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
+  gap: var(--file-viewer-toolbar-group-gap);
+  padding: var(--file-viewer-toolbar-group-padding);
   border: 1px solid rgba(20, 35, 53, 0.08);
   border-radius: 999px;
   background: rgba(20, 35, 53, 0.035);
 }
 
 .viewer-actions button {
-  min-width: 42px;
-  height: 30px;
-  padding: 0 10px;
+  min-width: var(--file-viewer-toolbar-button-min-width);
+  height: var(--file-viewer-toolbar-button-height);
+  padding: var(--file-viewer-toolbar-button-padding);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--file-viewer-toolbar-button-radius);
   background: transparent;
   color: #40546a;
   font: inherit;
@@ -579,8 +626,8 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions .viewer-icon-button {
-  width: 30px;
-  min-width: 30px;
+  width: var(--file-viewer-toolbar-icon-size);
+  min-width: var(--file-viewer-toolbar-icon-size);
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -588,9 +635,9 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions .viewer-zoom-meter {
-  min-width: 48px;
-  height: 30px;
-  padding: 0 8px;
+  min-width: var(--file-viewer-toolbar-meter-min-width);
+  height: var(--file-viewer-toolbar-button-height);
+  padding: var(--file-viewer-toolbar-meter-padding);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -606,19 +653,19 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions--floating button {
-  min-width: 48px;
-  height: 32px;
+  min-width: var(--file-viewer-toolbar-floating-button-min-width);
+  height: var(--file-viewer-toolbar-floating-button-height);
   border-radius: 999px;
 }
 
 .viewer-actions--floating .viewer-icon-button {
-  width: 32px;
-  min-width: 32px;
+  width: var(--file-viewer-toolbar-floating-icon-size);
+  min-width: var(--file-viewer-toolbar-floating-icon-size);
 }
 
 .viewer-actions--floating .viewer-zoom-meter {
-  min-width: 54px;
-  height: 32px;
+  min-width: var(--file-viewer-toolbar-floating-meter-min-width);
+  height: var(--file-viewer-toolbar-floating-button-height);
 }
 
 .viewer-actions button:hover:not(:disabled) {

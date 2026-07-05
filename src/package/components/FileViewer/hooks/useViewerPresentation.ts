@@ -48,12 +48,14 @@ export const useViewerPresentation = ({
   const currentExtend = computed(() => presentationState.value.extension)
   const normalizedToolbar = computed(() => presentationState.value.toolbar)
   const viewerTheme = computed(() => presentationState.value.theme)
+  const viewerDensity = computed(() => presentationState.value.density)
 
   return {
     displayFilename,
     currentExtend,
     normalizedToolbar,
     viewerTheme,
+    viewerDensity,
     formatErrorMessage: (prefix: string, error: unknown) =>
       formatFileViewerErrorMessage(prefix, error, getOptions())
   }
