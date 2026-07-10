@@ -194,7 +194,7 @@ const options = {
 - For the smallest custom bundle, skip presets, install individual renderers such as `@file-viewer/renderer-pdf` or `@file-viewer/renderer-word`, and pass them through `options.renderers`.
 - `fileViewerRenderers()` or `fileViewerRenderers({ copyAssets:true })` auto-discovers installed presets without explicit configuration. When `scan:true` is also enabled, use `preset:'auto'` or `autoPresets:true` to keep preset auto-discovery.
 - `scan:true` detects `fileViewerFormats`, `data-file-viewer-formats`, and upload `accept` hints so development and production builds select matching renderers automatically.
-- `copyAssets:true` copies PDF/CAD/Typst/Archive/Data workers, WASM, and vendor assets for offline and enterprise intranet deployment.
+- `copyAssets:true` copies PDF/CAD/Typst/Archive/Data workers, WASM, and vendor assets for offline and enterprise intranet deployment; archive directories use `vendor/libarchive/worker-bundle.js` / `libarchive.wasm` first, while the compatibility path only covers ZIP/TAR/GZIP when the Worker cannot start.
 - `builtinRenderers` remains available for advanced baseline control or historical compatibility. Normal quick starts only need `preset` / `renderers` plus `rendererMode`.
 - If a file is in the supported matrix but its renderer is not assembled, the viewer shows the recommended preset / renderer package. Truly unknown extensions still show an unsupported-format state.
 - `@file-viewer/preset-all` is the full one-step capability path for demos, admin tools, and enterprise all-format workbenches. Normal product surfaces should still prefer narrower presets.
@@ -222,7 +222,7 @@ The table below lists the real props, event channel, and customization entry for
 | Component | Actual props / entry | Event channel | Customization entry |
 | --- | --- | --- | --- |
 | Vanilla JS / Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` attributes: `src/url`, `filename/name`, `type`, `size`, `theme`, `toolbar`, `toolbar-position`, `watermark`, `search`, `options`; also supports `mountViewer(...)` | `viewer-ready`, `viewer-event`, `viewer-state-change`, `viewer-error`, `onEvent`, `onStateChange`, `controller.subscribe()` | The Custom Element instance exposes the full controller handle; the IIFE script auto-registers it while keeping imperative `mountViewer` and the asset copy CLI. |
-| Vue 3 `@file-viewer/vue3` | `url`, `file`, `options` | `load-start`, `load-complete`, `unload-start`, `unload-complete`, `operation-before`, `operation-cancel`, `operation-availability-change`, `search-change`, `location-change`, `zoom-change`, `view-state-change` | Template refs expose `FileViewerExpose`. For `Blob` / `ArrayBuffer`, prefer wrapping it as a named `File` so extension detection stays deterministic. |
+| Vue 3 `@file-viewer/vue3` | `url`, `file`, `options` | `load-start`, `load-complete`, `unload-start`, `unload-complete`, `operation-before`, `operation-cancel`, `operation-availability-change`, `search-change`, `location-change`, `zoom-change`, `view-state-change`, `theme-change` | Template refs expose `FileViewerExpose`. For `Blob` / `ArrayBuffer`, prefer wrapping it as a named `File` so extension detection stays deterministic. |
 | Vue 2.7 `@file-viewer/vue2.7` | `url`, `file`, `buffer`, `name`, `filename`, `type`, `size`, `options`, `containerClass`, `containerStyle` | `viewer-event` / `viewerEvent` | The component instance exposes the full controller handle. This is the Vue 2.7 line behind the historical `@flyfish-group/file-viewer` package. |
 | Vue 2.6 `@file-viewer/vue2.6` | Same as Vue 2.7 | `viewer-event` / `viewerEvent` | Separate Vue 2.6 build for long-lived applications that cannot move to Vue 2.7. |
 | React `@file-viewer/react` | `ViewerMountOptions` plus native `div` props such as `className`, `style`, `data-*`, and `aria-*` | `onEvent`, `onStateChange` | `ref` exposes `FileViewerHandle`; `useFileViewer()` returns `ref`, `props`, `state`, and `handle` for custom toolbars. |
@@ -235,10 +235,10 @@ The table below lists the real props, event channel, and customization entry for
 | `theme` | `light`, `dark`, or `system`. This takes precedence over browser `prefers-color-scheme`. |
 | `styleIsolation` | `auto`, `shadow`, `scoped`, or `none`. With `auto`, Web Component / full / IIFE entries use Shadow DOM by default; Vue, React, Svelte, and jQuery keep light-DOM compatibility unless renderer content is explicitly isolated with `shadow`. |
 | `watermark` | Text or image watermark with opacity, rotation, gap, size, font, and color controls. |
-| `toolbar` | Controls download, print, HTML export, zoom, toolbar position, and operation-level preflight checks. |
+| `toolbar` | Controls the theme toggle, download, print, HTML export, zoom, item order, toolbar position, and operation-level preflight checks. |
 | `search` | Document search, highlight class names, case sensitivity, whole-word matching, max matches, and debounce. |
 | `ai` | Text collection, chunk size, and max text length for provenance, location, vectorization, and external AI workflows. |
-| `archive` | Archive Worker/WASM URLs, timeout, cache, archive limits, and nested entry preview limits. |
+| `archive` | Archive Worker/WASM URLs, timeout, cache, archive limits, nested entry preview limits, and legacy GBK/GB18030 ZIP filename decoding. |
 | `pdf` | PDF.js worker, navigation pane, outline, thumbnails, rotation, streaming, range chunk size, and credentials. |
 | `docx` / `spreadsheet` | DOCX is provided by @file-viewer/renderer-word and uses the self-maintained @file-viewer/docx engine with automatic worker/main-thread selection, continuous flow reading, and async rendering by default; visual pagination is opt-in. Spreadsheet is provided by @file-viewer/renderer-spreadsheet with fidelity-first parsing, automatic Worker use for large files, and opt-in header drag column resizing. |
 | `typst` / `data` / `cad` | Typst, SQLite, CAD/DWG/DXF/DWF WASM, worker, encoding, and rendering strategy options. |
@@ -290,8 +290,10 @@ const options = {
 | Config | Description |
 | --- | --- |
 | `toolbar: false` | Hides the built-in toolbar without disabling controller APIs such as download, print, export, and zoom. Use this for a fully custom business toolbar. |
-| `toolbar: true` | Uses the default built-in toolbar. Download, print, HTML export, and zoom buttons are still shown only when the active renderer supports them. |
+| `toolbar: true` | Uses the default built-in toolbar. The theme toggle is visible by default; download, print, HTML export, and zoom remain capability-aware. |
 | `download` / `print` / `exportHtml` / `zoom` | Expresses whether the host allows a button. Final availability is still computed from file type, render readiness, export adapter, and zoom provider state. |
+| `theme` | Controls the light/dark toggle and defaults to `true`. A change emits `theme-change`; set it to `false` to hide the button. |
+| `order` | Orders built-in groups with `search`, `zoom`, `download`, `print`, `exportHtml`, and `theme`. Omitted items keep their default relative order. |
 | `position` | `auto`, `top`, `top-center`, or `bottom-right`. The default `auto` floats PDF actions at bottom right and keeps other formats top-right; use `top-center` for a centered top toolbar. |
 | `beforeOperation` | Toolbar-level preflight that runs after `options.beforeOperation`. Returning `false` or throwing cancels the operation. |
 | `beforeDownload` / `beforePrint` / `beforeExportHtml` | Operation-specific preflight for download permission, print audit, export confirmation, and similar business rules. |
@@ -321,6 +323,7 @@ View-state sync is designed for projection systems, remote-control displays, sid
 | `unload-complete` / `hooks.onUnloadComplete` | Fires after the previous document is released. The reason is `replace`, `reset`, or `component-unmount`. |
 | `operation-before` / `operation-cancel` | Fires around download, print, HTML export, and zoom actions. Returning `false` from `beforeOperation` cancels the action. |
 | `operation-availability-change` | Fires when download, print, HTML export, or zoom support changes for the active format. |
+| `theme-change` | Fires when the built-in control selects light or dark mode. The payload is `light` or `dark`. |
 | `search-change` / `location-change` / `zoom-change` / `view-state-change` | Fires when search matches, document anchors, zoom state, or full view-state snapshots change so host UIs, display screens, and reading-position restore flows can stay in sync. |
 
 ## Public Operation API
@@ -329,7 +332,8 @@ View-state sync is designed for projection systems, remote-control displays, sid
 | --- | --- |
 | `load` / `update` / `reload` / `destroy` | Imperatively load, update, reload, and destroy the viewer. |
 | `downloadOriginalFile()` | Downloads the original file while respecting toolbar and `beforeOperation` checks. |
-| `printRenderedHtml()` | Prints the complete rendered document using the best available per-format print adapter. |
+| `printRenderedHtml(options?)` | Prints the complete rendered document using the best available per-format print adapter. Enabled watermarks are included; pass `mask` for cover regions. |
+| `printWithMask(options?)` | Opens the black-cover mask designer, then prints. The designer is async-loaded inside core and works out of the box with component packages. |
 | `exportRenderedHtml()` | Exports rendered HTML for archiving, audit, or offline review. |
 | `zoomIn()` / `zoomOut()` / `resetZoom()` | Uses the active renderer zoom provider instead of outer CSS transforms that can break coordinates. |
 | `searchDocument()` / `nextSearchResult()` / `previousSearchResult()` | Runs document-level search and navigates highlighted matches. |
@@ -343,11 +347,12 @@ View-state sync is designed for projection systems, remote-control displays, sid
 | --- | --- |
 | Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
 | CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
-| PDF / DOCX / Excel / PPTX | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, `options.spreadsheet.workerUrl`, and `options.presentation.workerUrl` / `options.presentation.workerType`; PDF probes the real static worker first and lazy-loads the packaged handler when unavailable; DOCX chooses worker or main-thread parsing automatically, Electron `file://` and other unsafe local protocols fall back without user configuration; Excel defaults to `worker: auto`, enabling Worker automatically for files at or above `workerAutoThreshold`, and header drag column resizing is controlled by `options.spreadsheet.resizableColumns`; PPTX creates a module Worker on demand and can pin the worker URL/type for strict CSP, legacy WebViews, or self-hosted CDNs. |
-| Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed; Typst renders through local WASM only and never falls back to a public CDN. |
+| PDF / DOCX / Excel / PPTX | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.pdf.cjkFontFallbackPath`, `options.pdf.identityFontRepair`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, `options.spreadsheet.workerUrl`, and `options.presentation.workerUrl` / `options.presentation.workerType`; PDF probes the real static worker first and lazy-loads the packaged handler when unavailable, unembedded CJK fonts fall back to self-hosted Noto Sans SC shards loaded per page, and malformed Identity CJK fonts without ToUnicode are repaired in memory after corrupted text is detected; DOCX chooses worker or main-thread parsing automatically, Electron `file://` and other unsafe local protocols fall back without user configuration; Excel defaults to `worker: auto`, enabling Worker automatically for files at or above `workerAutoThreshold`, and header drag column resizing is controlled by `options.spreadsheet.resizableColumns`; PPTX creates a module Worker on demand and can pin the worker URL/type for strict CSP, legacy WebViews, or self-hosted CDNs. |
+| Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed; Typst renders through local WASM only and never falls back to a public CDN; Archive decodes legacy GBK/GB18030 ZIP entry names, while RAR, 7z, and encrypted archives still require the libarchive Worker/WASM assets. |
 | Drawing | Draw.io uses the official diagrams.net offline viewer shipped with viewer assets by default; override `options.drawing.viewerScriptUrl` for custom paths, or set `preferOfficial:false` for the built-in SVG fallback. |
-| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, DOCX worker/JSZip, PPTX worker, and Office worker/vendor assets. |
+| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, DOCX worker/JSZip, PPTX worker, and Office worker/vendor assets. Vue full packages default to `/file-viewer/` as the asset root; call `setDefaultFullAssetBaseUrl()` first when your static prefix differs. |
 | Deployment principle | Heavy workers, WASM files, and parser libraries stay lazy-loaded and are only requested when the active file type needs them. |
+
 
 ## Quality Gates
 

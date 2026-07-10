@@ -197,7 +197,7 @@ const options = {
 - 想要最小包体时，可以不用 preset，直接安装 `@file-viewer/renderer-pdf`、`@file-viewer/renderer-word` 等单个 renderer，并通过 `options.renderers` 手动注入。
 - `fileViewerRenderers()` 或 `fileViewerRenderers({ copyAssets:true })` 会免配置自动发现已安装 preset；如果同时开启 `scan:true`，请使用 `preset:'auto'` 或 `autoPresets:true` 保留 preset 自动发现。
 - `scan:true` 会识别 `fileViewerFormats`、`data-file-viewer-formats` 和上传控件 `accept`，调试与打包时自动选择 renderer。
-- `copyAssets:true` 会复制 PDF/CAD/Typst/Archive/Data 等 worker、WASM 和 vendor 资源，满足离线和企业内网部署。
+- `copyAssets:true` 会复制 PDF/CAD/Typst/Archive/Data 等 worker、WASM 和 vendor 资源，满足离线和企业内网部署；压缩包目录会优先使用 `vendor/libarchive/worker-bundle.js` / `libarchive.wasm`，Worker 不可用时只对 ZIP/TAR/GZIP 进入兼容路径。
 - `builtinRenderers` 仍可用于高级基线控制或历史兼容；普通快速接入只需要 `preset` / `renderers` 与 `rendererMode`。
 - 如果打开的是支持矩阵内但未装配的格式，预览器会提示应安装的 preset / renderer；只有真正不在矩阵中的扩展名才提示不支持。
 - `@file-viewer/preset-all` 是全量一键方案，适合 demo、后台运维工具和企业全格式附件中心；普通业务仍建议优先选择更窄的 preset。
@@ -225,7 +225,7 @@ const options = {
 | 组件 | 实际属性 / 入口 | 事件入口 | 定制入口 |
 | --- | --- | --- | --- |
 | Vanilla JS / Pure Web `@file-viewer/web` | `<flyfish-file-viewer>` 属性 `src/url`、`filename/name`、`type`、`size`、`theme`、`toolbar`、`toolbar-position`、`watermark`、`search`、`options`；也支持 `mountViewer(...)` | `viewer-ready`、`viewer-event`、`viewer-state-change`、`viewer-error`、`onEvent`、`onStateChange`、`controller.subscribe()` | Custom Element 实例暴露完整 controller handle；IIFE script 标签会自动注册元素，同时保留 `mountViewer` 命令式挂载和资源复制 CLI。 |
-| Vue 3 `@file-viewer/vue3` | `url`、`file`、`options` | `load-start`、`load-complete`、`unload-start`、`unload-complete`、`operation-before`、`operation-cancel`、`operation-availability-change`、`search-change`、`location-change`、`zoom-change`、`view-state-change` | 模板 `ref` 暴露 `FileViewerExpose`；适合声明式接入。`Blob` / `ArrayBuffer` 建议包装成带扩展名的 `File` 后传给 `file`。 |
+| Vue 3 `@file-viewer/vue3` | `url`、`file`、`options` | `load-start`、`load-complete`、`unload-start`、`unload-complete`、`operation-before`、`operation-cancel`、`operation-availability-change`、`search-change`、`location-change`、`zoom-change`、`view-state-change`、`theme-change` | 模板 `ref` 暴露 `FileViewerExpose`；适合声明式接入。`Blob` / `ArrayBuffer` 建议包装成带扩展名的 `File` 后传给 `file`。 |
 | Vue 2.7 `@file-viewer/vue2.7` | `url`、`file`、`buffer`、`name`、`filename`、`type`、`size`、`options`、`containerClass`、`containerStyle` | `viewer-event` / `viewerEvent` | 组件实例暴露 controller handle 全量方法；适合 Vue 2.7 项目和历史 `@flyfish-group/file-viewer` 平滑升级。 |
 | Vue 2.6 `@file-viewer/vue2.6` | 同 Vue 2.7 | `viewer-event` / `viewerEvent` | 独立 Vue 2.6 构建，不要求业务升级到 Vue 2.7。 |
 | React `@file-viewer/react` | `ViewerMountOptions` + `div` 原生属性，如 `className`、`style`、`data-*`、`aria-*` | `onEvent`、`onStateChange` | `ref` 暴露 `FileViewerHandle`；`useFileViewer()` 会返回 `ref`、`props`、`state`、`handle`，便于自定义工具栏。 |
@@ -238,10 +238,10 @@ const options = {
 | `theme` | `light`、`dark` 或 `system`，优先级高于浏览器 `prefers-color-scheme`。 |
 | `styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。`auto` 下 Web Component / full / IIFE 默认使用 Shadow DOM；Vue、React、Svelte、jQuery 默认保持 light DOM 兼容，但 renderer 内容可通过 `shadow` 获得独立渲染根。 |
 | `watermark` | 开启文字或图片水印，可设置透明度、旋转、间距、尺寸、字体和颜色。 |
-| `toolbar` | 控制下载、打印、HTML 导出、缩放和工具栏位置，并支持操作级前置校验。 |
+| `toolbar` | 控制主题切换、下载、打印、HTML 导出、缩放、按钮顺序和工具栏位置，并支持操作级前置校验。 |
 | `search` | 配置文档搜索、高亮 class、大小写、整词匹配、最大命中数和 debounce。 |
 | `ai` | 控制文本结构采集、分块大小和最大文本长度，为溯源、定位、向量化和外部 AI 流程提供基础。 |
-| `archive` | 配置压缩包 Worker/WASM、超时、缓存、包体限制和压缩包内单文件预览大小。 |
+| `archive` | 配置压缩包 Worker/WASM、超时、缓存、包体限制和压缩包内单文件预览大小；旧 ZIP 中文文件名会自动按 GBK/GB18030 兼容解码。 |
 | `pdf` | 配置 PDF.js Worker、导航栏、目录、缩略图、旋转、流式读取、Range chunk 和凭据。 |
 | `docx` / `spreadsheet` | DOCX 由 @file-viewer/renderer-word 承接并使用自研 @file-viewer/docx，默认自动选择 Worker 或主线程解析，连续流式阅读和异步分批渲染，可按需显式开启视觉分页；表格由 @file-viewer/renderer-spreadsheet 承接，默认保真解析，大文件自动启用 Worker，表头拖拽调列宽可按需显式开启。 |
 | `typst` / `data` / `cad` | 配置 Typst、SQLite、CAD/DWG/DXF/DWF 等 WASM、Worker、编码和渲染策略。 |
@@ -293,8 +293,10 @@ const options = {
 | 配置 | 说明 |
 | --- | --- |
 | `toolbar: false` | 隐藏内置工具栏，但不关闭下载、打印、导出、缩放等 controller API，适合完全自定义业务工具栏。 |
-| `toolbar: true` | 使用默认内置工具栏，下载、打印、HTML 导出和缩放按钮都会按能力动态显隐。 |
+| `toolbar: true` | 使用默认内置工具栏；主题切换默认显示，下载、打印、HTML 导出和缩放按钮按能力动态显隐。 |
 | `download` / `print` / `exportHtml` / `zoom` | 表达业务是否允许展示对应按钮；最终仍会结合文件类型、渲染完成状态、导出适配器和缩放 provider 计算真实可用性。 |
+| `theme` | 控制浅色/深色切换按钮，默认 `true`；切换后触发 `theme-change`，传 `false` 可隐藏。 |
+| `order` | 设置内置分组顺序，可使用 `search`、`zoom`、`download`、`print`、`exportHtml`、`theme`；遗漏项保持默认相对顺序。 |
 | `position` | `auto`、`top`、`top-center`、`bottom-right`。默认 `auto`，PDF 自动悬浮右下角，其他格式保持顶部靠右；需要顶部水平居中时传 `top-center`。 |
 | `beforeOperation` | 工具栏层统一前置校验，会在 `options.beforeOperation` 后执行。返回 `false` 或抛错都会取消本次操作。 |
 | `beforeDownload` / `beforePrint` / `beforeExportHtml` | 单按钮前置校验；适合下载权限、打印审计、导出水印确认等细粒度业务规则。 |
@@ -324,6 +326,7 @@ const options = {
 | `unload-complete` / `hooks.onUnloadComplete` | 旧文档释放完成后触发，reason 会标识 `replace`、`reset` 或 `component-unmount`。 |
 | `operation-before` / `operation-cancel` | 下载、打印、HTML 导出和缩放前后触发；`beforeOperation` 返回 `false` 可取消操作。 |
 | `operation-availability-change` | 当前格式是否可下载、可打印、可导出 HTML、可缩放发生变化时触发。 |
+| `theme-change` | 用户通过内置按钮切换浅色或深色模式时触发，payload 为 `light` 或 `dark`。 |
 | `search-change` / `location-change` / `zoom-change` / `view-state-change` | 搜索命中、定位锚点、缩放状态和完整视图快照变化时触发，用于外层同步 UI、投屏或恢复阅读进度。 |
 
 ## 公共操作 API
@@ -332,7 +335,8 @@ const options = {
 | --- | --- |
 | `load` / `update` / `reload` / `destroy` | 命令式控制文档加载、参数更新、重新加载和销毁。 |
 | `downloadOriginalFile()` | 下载原始文件，遵循 toolbar 与 `beforeOperation` 权限校验。 |
-| `printRenderedHtml()` | 打印当前完整渲染内容，优先使用各格式的高保真打印适配器。 |
+| `printRenderedHtml(options?)` | 打印当前完整渲染内容，优先使用各格式的高保真打印适配器；开启水印时会一并输出，也可传入 `mask` 遮盖区域。 |
+| `printWithMask(options?)` | 打开掩膜设计器拖拽黑色遮盖块，确认后打印；设计器由 core 异步加载，组件开箱即用。 |
 | `exportRenderedHtml()` | 导出当前渲染后的 HTML，用于归档、审计和离线查看。 |
 | `zoomIn()` / `zoomOut()` / `resetZoom()` | 调用当前格式自己的缩放 provider，避免外层 CSS 缩放导致坐标偏移。 |
 | `searchDocument()` / `nextSearchResult()` / `previousSearchResult()` | 打开文档级搜索并在命中之间导航，保持高亮状态。 |
@@ -346,11 +350,12 @@ const options = {
 | --- | --- |
 | 通用 viewer assets | Pure Web 包提供 `file-viewer-copy-assets`，可把 Worker、WASM、vendor 和示例资源复制到业务静态目录。 |
 | CAD / DWG / DXF / DWF | 按需配置 `options.cad.wasmPath`、`workerUrl`、`dwfWasmUrl`、`dxfEncoding`，支持自托管和内网部署。 |
-| PDF / DOCX / Excel / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `options.presentation.workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；PPTX 默认按需创建模块 Worker，严格 CSP、旧 WebView 或自托管 CDN 场景可固定 Worker 地址。 |
-| Typst / SQLite / Archive | 按需配置 Typst compiler/renderer WASM、`data.sqlWasmUrl`、`archive.workerUrl` / `archive.wasmUrl`；Typst 仅使用本地 WASM 真实渲染，不访问公共 CDN。 |
+| PDF / DOCX / Excel / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.pdf.cjkFontFallbackPath`、`options.pdf.identityFontRepair`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `options.presentation.workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底，未嵌入的中文字体默认按页加载本地 Noto Sans SC 分片回退，缺失 ToUnicode 的异常 Identity CJK 字体会在检测到乱码后尝试内存修复；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；PPTX 默认按需创建模块 Worker，严格 CSP、旧 WebView 或自托管 CDN 场景可固定 Worker 地址。 |
+| Typst / SQLite / Archive | 按需配置 Typst compiler/renderer WASM、`data.sqlWasmUrl`、`archive.workerUrl` / `archive.wasmUrl`；Typst 仅使用本地 WASM 真实渲染，不访问公共 CDN；Archive 兼容 GBK/GB18030 旧 ZIP 中文文件名，RAR、7z 和加密压缩包仍需要 libarchive Worker/WASM。 |
 | Drawing | Draw.io 默认使用随 viewer assets 分发的官方 diagrams.net 离线 viewer；路径特殊时可通过 `options.drawing.viewerScriptUrl` 覆盖，`preferOfficial:false` 才切到内置 SVG 兜底。 |
-| 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；`file-viewer-copy-assets` 会复制 PDF、CAD、Typst、SQLite、压缩包、Draw.io、DOCX worker/JSZip、PPTX worker 和 Office worker/vendor 资产。 |
+| 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；`file-viewer-copy-assets` 会复制 PDF、CAD、Typst、SQLite、压缩包、Draw.io、DOCX worker/JSZip、PPTX worker 和 Office worker/vendor 资产。Vue full 包默认使用 `/file-viewer/` 作为资源根，路径不同可先调用 `setDefaultFullAssetBaseUrl()`。 |
 | 部署原则 | 默认只在命中特定格式时异步加载对应依赖；没有命中的格式不会拉取重型 Worker、WASM 或解析库。 |
+
 
 ## 质量门禁
 

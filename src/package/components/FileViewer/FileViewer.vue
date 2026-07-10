@@ -1,15 +1,19 @@
 <script setup lang='ts'>
-import { computed, ref } from 'vue'
-import { RotateCcw, ZoomIn, ZoomOut } from '@lucide/vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Moon, RotateCcw, Sun, ZoomIn, ZoomOut } from '@lucide/vue'
 import {
   createFileViewerTranslator,
   createFileViewerRequestScope,
   reportFileViewerLifecycleHookError,
-  reportFileViewerOperationError
+  reportFileViewerOperationError,
+  resolveFileViewerColorScheme,
+  toggleFileViewerColorScheme
 } from '@file-viewer/core'
 import type {
   FileViewerComponentEmits as FileViewerEmits,
-  FileViewerComponentProps as FileViewerProps
+  FileViewerComponentProps as FileViewerProps,
+  FileViewerOptions,
+  FileViewerResolvedThemeMode
 } from '@file-viewer/core'
 import { useLoading } from './hooks/useLoading'
 import { useViewerDocumentFeatures } from './hooks/useViewerDocumentFeatures'
@@ -35,8 +39,34 @@ const output = ref<HTMLDivElement | null>(null)
 const currentFile = ref<File | null>(null)
 const currentBuffer = ref<ArrayBuffer | null>(null)
 const currentSourceUrl = ref<string | null>(null)
+const manualViewerTheme = ref<FileViewerResolvedThemeMode | null>(null)
+const viewerColorSchemeQuery = typeof globalThis.matchMedia === 'function'
+  ? globalThis.matchMedia('(prefers-color-scheme: dark)')
+  : null
+const systemPrefersDark = ref(viewerColorSchemeQuery?.matches ?? false)
+const handleViewerColorSchemeChange = (event: MediaQueryListEvent) => {
+  systemPrefersDark.value = event.matches
+}
+
+onMounted(() => viewerColorSchemeQuery?.addEventListener?.('change', handleViewerColorSchemeChange))
+onBeforeUnmount(() => viewerColorSchemeQuery?.removeEventListener?.('change', handleViewerColorSchemeChange))
+
+const effectiveOptions = computed<FileViewerOptions | undefined>(() => {
+  if (!manualViewerTheme.value) {
+    return props.options
+  }
+  return {
+    ...(props.options || {}),
+    theme: manualViewerTheme.value
+  }
+})
+
+watch(() => props.options?.theme, () => {
+  manualViewerTheme.value = null
+})
+
 const viewerLabels = computed(() => {
-  const t = createFileViewerTranslator(props.options)
+  const t = createFileViewerTranslator(effectiveOptions.value)
   return {
     zoomGroup: t('toolbar.zoomGroup'),
     zoomOut: t('toolbar.zoomOut'),
@@ -46,10 +76,16 @@ const viewerLabels = computed(() => {
     downloadTitle: t('toolbar.downloadTitle'),
     print: t('toolbar.print'),
     printTitle: t('toolbar.printTitle'),
+    printDirect: t('toolbar.printDirect'),
+    printMask: t('toolbar.printMask'),
+    printMaskTitle: t('toolbar.printMaskTitle'),
     exportHtml: t('toolbar.exportHtml'),
-    exportHtmlTitle: t('toolbar.exportHtmlTitle')
+    exportHtmlTitle: t('toolbar.exportHtmlTitle'),
+    themeToLight: t('toolbar.themeToLight'),
+    themeToDark: t('toolbar.themeToDark')
   }
 })
+const printMenuOpen = ref(false)
 const {
   refreshDocumentIndex,
   clearDocumentState,
@@ -65,7 +101,7 @@ const {
   getDocumentTextChunks
 } = useViewerDocumentFeatures({
   output,
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   emitSearchChange: state => emit('search-change', state),
   emitLocationChange: anchor => emit('location-change', anchor)
 })
@@ -82,13 +118,13 @@ const {
   getFile: () => props.file,
   getUrl: () => props.url,
   getSourceFilename: () => props.filename || props.name,
-  getOptions: () => props.options
+  getOptions: () => effectiveOptions.value
 })
 
 const {
   watermarkStyle,
   watermarkInlineStyle
-} = useViewerWatermark(() => props.options?.watermark)
+} = useViewerWatermark(() => effectiveOptions.value?.watermark)
 
 const {
   loading,
@@ -102,13 +138,13 @@ const {
   showError,
   clearError,
   resetLoading
-} = useLoading(currentExtend, () => props.options)
+} = useLoading(currentExtend, () => effectiveOptions.value)
 
 const errorState = useViewerErrorState({
   currentExtend,
   error,
   loadingTheme,
-  getOptions: () => props.options
+  getOptions: () => effectiveOptions.value
 })
 
 const {
@@ -129,7 +165,7 @@ const {
   buildRenderCompleteState,
   runBeforeOperation
 } = useViewerLifecycle({
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   getFilename: () => filename.value,
   getBufferSize: () => currentBuffer.value?.byteLength,
   getCurrentFile: () => currentFile.value,
@@ -193,7 +229,7 @@ const {
   fitToView
 } = useViewerFit({
   output,
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   refreshZoomProvider,
   refreshViewStateProvider,
   emitFitChange: result => emit('fit-change', result)
@@ -209,7 +245,7 @@ const {
   setActiveRenderSession
 } = useViewerRenderSurface({
   output,
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   isCurrentRequest,
   notifyActiveUnloadStart,
   notifyActiveUnloadComplete,
@@ -244,7 +280,7 @@ const {
   currentFile,
   currentSourceUrl,
   error,
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   getZoomState,
   loading,
   normalizedToolbar,
@@ -261,7 +297,7 @@ const {
   getFile: () => props.file,
   getUrl: () => props.url,
   getSourceFilename: () => props.filename || props.name,
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   filename,
   currentFile,
   currentBuffer,
@@ -291,7 +327,8 @@ const {
 const {
   downloadOriginalFile,
   exportRenderedHtml,
-  printRenderedHtml
+  printRenderedHtml,
+  printWithMask
 } = useViewerExport({
   activeExportAdapter,
   currentBuffer,
@@ -299,7 +336,7 @@ const {
   currentSourceUrl,
   displayFilename,
   formatErrorMessage,
-  getOptions: () => props.options,
+  getOptions: () => effectiveOptions.value,
   operationAvailability,
   output,
   runBeforeOperation,
@@ -322,6 +359,53 @@ const resetZoomByUser = async () => {
   return resetZoom()
 }
 
+const resolvedViewerTheme = computed(() => {
+  return resolveFileViewerColorScheme(viewerTheme.value, systemPrefersDark.value)
+})
+const themeButtonTitle = computed(() => {
+  return resolvedViewerTheme.value === 'dark'
+    ? viewerLabels.value.themeToLight
+    : viewerLabels.value.themeToDark
+})
+
+const toggleViewerTheme = async () => {
+  const previousViewState = getViewState()
+  const nextTheme = toggleFileViewerColorScheme(viewerTheme.value, systemPrefersDark.value)
+  manualViewerTheme.value = nextTheme
+  emit('theme-change', nextTheme)
+  await nextTick()
+  if (props.file || props.url) {
+    await refreshPreview()
+    if (previousViewState) {
+      await applyViewState(previousViewState, {
+        action: 'restore',
+        source: 'api'
+      })
+    }
+  }
+}
+
+const closePrintMenu = () => {
+  printMenuOpen.value = false
+}
+
+const togglePrintMenu = () => {
+  if (toolbarDisabled.value) {
+    return
+  }
+  printMenuOpen.value = !printMenuOpen.value
+}
+
+const printDirect = async () => {
+  closePrintMenu()
+  await printRenderedHtml()
+}
+
+const printWithMaskAction = async () => {
+  closePrintMenu()
+  await printWithMask()
+}
+
 const destroyViewer = () => {
   cancelPreview('component-unmount')
   resetLoading()
@@ -336,6 +420,7 @@ const publicApi = useViewerPublicApi({
   },
   downloadOriginalFile,
   printRenderedHtml,
+  printWithMask,
   exportRenderedHtml,
   zoomIn: zoomInByUser,
   zoomOut: zoomOutByUser,
@@ -457,15 +542,49 @@ useViewerPreviewLifecycle({
           >
             {{ viewerLabels.download }}
           </button>
-          <button
+          <div
             v-else-if='toolbarItem === "print" && visibleToolbar.print'
-            type='button'
-            :disabled='toolbarDisabled'
-            :title='viewerLabels.printTitle'
-            @click='printRenderedHtml'
+            class='viewer-print-menu'
+            :data-open='printMenuOpen ? "true" : "false"'
+            @focusout='event => {
+              const next = event.relatedTarget as Node | null
+              if (!next || !(event.currentTarget as HTMLElement).contains(next)) {
+                closePrintMenu()
+              }
+            }'
           >
-            {{ viewerLabels.print }}
-          </button>
+            <button
+              type='button'
+              :disabled='toolbarDisabled'
+              :title='viewerLabels.printTitle'
+              :aria-label='viewerLabels.printTitle'
+              :aria-haspopup='true'
+              :aria-expanded='printMenuOpen'
+              @click='togglePrintMenu'
+            >
+              {{ viewerLabels.print }}
+            </button>
+            <div class='viewer-print-menu-panel' role='menu'>
+              <button
+                type='button'
+                role='menuitem'
+                :disabled='toolbarDisabled'
+                :title='viewerLabels.printTitle'
+                @click='printDirect'
+              >
+                {{ viewerLabels.printDirect }}
+              </button>
+              <button
+                type='button'
+                role='menuitem'
+                :disabled='toolbarDisabled'
+                :title='viewerLabels.printMaskTitle'
+                @click='printWithMaskAction'
+              >
+                {{ viewerLabels.printMask }}
+              </button>
+            </div>
+          </div>
           <button
             v-else-if='toolbarItem === "exportHtml" && visibleToolbar.exportHtml'
             type='button'
@@ -474,6 +593,19 @@ useViewerPreviewLifecycle({
             @click='exportRenderedHtml'
           >
             {{ viewerLabels.exportHtml }}
+          </button>
+          <button
+            v-else-if='toolbarItem === "theme" && visibleToolbar.theme'
+            type='button'
+            class='viewer-icon-button viewer-theme-button'
+            :title='themeButtonTitle'
+            :aria-label='themeButtonTitle'
+            :aria-pressed='resolvedViewerTheme === "dark"'
+            :disabled='toolbarDisabled'
+            @click='toggleViewerTheme'
+          >
+            <Sun v-if='resolvedViewerTheme === "dark"' :size='15' :stroke-width='2.3' />
+            <Moon v-else :size='15' :stroke-width='2.3' />
           </button>
         </template>
       </div>
@@ -650,6 +782,45 @@ useViewerPreviewLifecycle({
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
+}
+
+.viewer-print-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.viewer-print-menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 118px;
+  padding: 4px;
+  border: 1px solid rgba(20, 35, 53, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viewer-print-menu[data-open='true'] .viewer-print-menu-panel {
+  display: flex;
+}
+
+.viewer-print-menu-panel button {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  text-align: left;
+  border-radius: 8px;
+}
+
+.viewer-actions--floating .viewer-print-menu-panel {
+  top: auto;
+  bottom: calc(100% + 6px);
+  z-index: 50;
 }
 
 .viewer-actions--floating button {
@@ -950,7 +1121,14 @@ useViewerPreviewLifecycle({
     max-width: calc(100% - 20px);
     gap: 4px;
     padding: 5px;
-    overflow-x: auto;
+    overflow: visible;
+  }
+
+  .viewer-actions--floating .viewer-print-menu-panel {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    min-width: min(148px, calc(100vw - 32px));
   }
 
   .viewer-actions--floating button {

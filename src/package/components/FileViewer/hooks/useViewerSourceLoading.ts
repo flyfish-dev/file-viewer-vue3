@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import {
   createFileViewerPreviewStateTarget,
   createFileViewerSourceLoadingActionHandlers,
+  normalizeFileViewerSourceUrl,
   translateFileViewerMessage,
 } from '@file-viewer/core'
 import type { FileViewerErrorMessageFormatter, FileViewerRequestController } from '@file-viewer/core'
@@ -146,7 +147,8 @@ export const useViewerSourceLoading = ({
     previewTarget: previewStateTarget,
     requestController,
     downloadFile: async ({ url: downloadUrl, signal }) => {
-      const response = await fetch(downloadUrl, { signal })
+      const requestUrl = normalizeFileViewerSourceUrl(downloadUrl) || downloadUrl
+      const response = await fetch(requestUrl, { signal })
       if (!response.ok) {
         throw new Error(`${translateFileViewerMessage(getOptions(), 'error.remoteDownload')}: HTTP ${response.status}`)
       }
