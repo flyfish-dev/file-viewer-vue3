@@ -197,7 +197,7 @@ const options = {
 - `copyAssets:true` copies PDF/CAD/Typst/Archive/Data workers, WASM, and vendor assets for offline and enterprise intranet deployment; archive directories use `vendor/libarchive/worker-bundle.js` / `libarchive.wasm` first, while the compatibility path only covers ZIP/TAR/GZIP when the Worker cannot start.
 - `builtinRenderers` remains available for advanced baseline control or historical compatibility. Normal quick starts only need `preset` / `renderers` plus `rendererMode`.
 - If a file is in the supported matrix but its renderer is not assembled, the viewer shows the recommended preset / renderer package. Truly unknown extensions still show an unsupported-format state.
-- `@file-viewer/preset-all` is the full one-step capability path for demos, admin tools, and enterprise all-format workbenches. Normal product surfaces should still prefer narrower presets.
+- `@file-viewer/preset-all` provides the complete renderer matrix; Worker, WASM, font, and vendor assets still need to be deployed by the Vite plugin or `file-viewer-copy-assets`. `*-full` packages already include this preset and must not install it again.
 
 ## Shared Options And Events
 
@@ -345,12 +345,12 @@ View-state sync is designed for projection systems, remote-control displays, sid
 
 | Asset | Description |
 | --- | --- |
-| Shared viewer assets | The Pure Web package ships `file-viewer-copy-assets` to copy workers, WASM, vendor files, and examples into your static directory. |
+| Shared viewer assets | Every `*-full` package exposes a `file-viewer-copy-assets` CLI at the package version. It copies workers, WASM, fonts, and vendor files into the application static directory and writes an integrity manifest. The complete `web-full` `dist/` also carries that payload directly. |
 | CAD / DWG / DXF / DWF | Configure `options.cad.wasmPath`, `workerUrl`, `dwfWasmUrl`, and `dxfEncoding` for self-hosted or intranet deployment. |
 | PDF / DOCX / Excel / PPTX | Configure `options.pdf.workerUrl`, `options.pdf.cMapUrl`, `options.pdf.wasmUrl`, `options.pdf.standardFontDataUrl`, `options.pdf.cjkFontFallbackPath`, `options.pdf.identityFontRepair`, `options.docx.workerUrl`, `options.docx.workerJsZipUrl`, `options.spreadsheet.workerUrl`, and `options.presentation.workerUrl` / `options.presentation.workerType`; PDF probes the real static worker first and lazy-loads the packaged handler when unavailable, unembedded CJK fonts fall back to self-hosted Noto Sans SC shards loaded per page, and malformed Identity CJK fonts without ToUnicode are repaired in memory after corrupted text is detected; DOCX chooses worker or main-thread parsing automatically, Electron `file://` and other unsafe local protocols fall back without user configuration; Excel defaults to `worker: auto`, enabling Worker automatically for files at or above `workerAutoThreshold`, and header drag column resizing is controlled by `options.spreadsheet.resizableColumns`; PPTX creates a module Worker on demand and can pin the worker URL/type for strict CSP, legacy WebViews, or self-hosted CDNs. |
 | Typst / SQLite / Archive | Configure Typst compiler/renderer WASM, `data.sqlWasmUrl`, and `archive.workerUrl` / `archive.wasmUrl` as needed; Typst renders through local WASM only and never falls back to a public CDN; Archive decodes legacy GBK/GB18030 ZIP entry names, while RAR, 7z, and encrypted archives still require the libarchive Worker/WASM assets. |
 | Drawing | Draw.io uses the official diagrams.net offline viewer shipped with viewer assets by default; override `options.drawing.viewerScriptUrl` for custom paths, or set `preferOfficial:false` for the built-in SVG fallback. |
-| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets; `file-viewer-copy-assets` copies PDF, CAD, Typst, SQLite, archive, Draw.io, DOCX worker/JSZip, PPTX worker, and Office worker/vendor assets. Vue full packages default to `/file-viewer/` as the asset root; call `setDefaultFullAssetBaseUrl()` first when your static prefix differs. |
+| Offline deployment | Runtime preview code does not depend on public CDN or third-party online assets. Every `*-full` package uses `file-viewer/` under the deployment base (`/file-viewer/` at the origin root). Vite publishes assets with `copyAssets:true`; other build tools run `npx --no-install file-viewer-copy-assets ./public/file-viewer`. Call `setDefaultFullAssetBaseUrl()` when assets live elsewhere. |
 | Deployment principle | Heavy workers, WASM files, and parser libraries stay lazy-loaded and are only requested when the active file type needs them. |
 
 
