@@ -46,7 +46,7 @@ English README: [README.en.md](./README.en.md)。
 <!-- FILE_VIEWER_GENERATED:START -->
 ## 生态包矩阵
 
-所有标准组件包都只共享 `@file-viewer/core` 这个总底座，不依赖其他框架组件实现。core 负责格式矩阵、资源解析、renderer 协议、事件、操作 API、搜索、缩放、打印和导出；PDF、Word、PPTX、CAD、Typst 等重型链路通过独立 renderer 或 preset 显式装配；各框架组件包自己维护本地 controller、组件生命周期、类型出口和生态交互。
+所有标准组件包都只共享 `@file-viewer/core` 这个总底座，不依赖其他框架组件实现。core 负责格式矩阵、资源解析、renderer 协议、事件、操作 API、搜索、缩放、打印和导出；PDF、Word、PPT/PPTX、CAD、Typst 等重型链路通过独立 renderer 或 preset 显式装配；各框架组件包自己维护本地 controller、组件生命周期、类型出口和生态交互。
 
 | 框架 | 标准 npm 包 | 入口格式 | GitHub | Gitee | 兼容历史包 |
 | --- | --- | --- | --- | --- | --- |
@@ -69,15 +69,16 @@ English README: [README.en.md](./README.en.md)。
 
 ## 格式支持矩阵
 
-共享格式矩阵当前覆盖 24 条预览链路、206 个扩展名。完整能力通过 renderer / preset 按需装配，组件层只做生态适配，不互相嵌套。
+共享格式矩阵当前覆盖 25 条预览链路、208 个扩展名。完整能力通过 renderer / preset 按需装配，组件层只做生态适配，不互相嵌套。
 
 | 预览链路 | 分类 | 扩展名 | 能力 | 加载 |
 | --- | --- | --- | --- | --- |
 | Word OpenXML | office | `.docx`, `.docm`, `.dotx`, `.dotm` | 下载, 打印(适配器), HTML(适配器), 缩放(Provider), 搜索 | 按需异步 |
 | Word Binary | office | `.doc`, `.dot` | 下载, 打印(适配器), HTML(适配器), 缩放(Provider), 搜索 | 按需异步 |
-| PowerPoint | office | `.pptx`, `.pptm`, `.potx`, `.potm`, `.ppsx`, `.ppsm` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
+| PowerPoint 97–2003 | office | `.ppt` | 下载, 打印(适配器), HTML(适配器), 缩放(Provider) | 按需异步 |
+| PowerPoint OpenXML | office | `.pptx`, `.pptm`, `.potx`, `.potm`, `.ppsx`, `.ppsm` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
 | Open Document | office | `.rtf`, `.odt`, `.odp` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
-| Spreadsheet | office | `.xlsx`, `.xltx`, `.xlsm`, `.xlsb`, `.xls`, `.xlt`, `.xltm`, `.csv`, `.ods`, `.fods`, `.numbers` | 下载, 缩放(Provider), 搜索 | 按需异步 |
+| Spreadsheet | office | `.xlsx`, `.xltx`, `.xlsm`, `.xlsb`, `.xls`, `.xlt`, `.xltm`, `.csv`, `.tsv`, `.ods`, `.fods`, `.numbers` | 下载, 缩放(Provider), 搜索 | 按需异步 |
 | PDF | document | `.pdf` | 下载, 打印(适配器), HTML(适配器), 缩放(Provider), 搜索(Provider) | 按需异步 |
 | OFD | document | `.ofd` | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
 | Typst | document | `.typ`, `.typst` | 下载, 打印(适配器), HTML(适配器), 缩放(Provider), 搜索 | 按需异步 |
@@ -244,6 +245,7 @@ const options = {
 | `archive` | 配置压缩包 Worker/WASM、超时、缓存、包体限制和压缩包内单文件预览大小；旧 ZIP 中文文件名会自动按 GBK/GB18030 兼容解码。 |
 | `pdf` | 配置 PDF.js Worker、导航栏、目录、缩略图、旋转、流式读取、Range chunk 和凭据。 |
 | `docx` / `spreadsheet` | DOCX 由 @file-viewer/renderer-word 承接并使用自研 @file-viewer/docx，默认自动选择 Worker 或主线程解析，连续流式阅读和异步分批渲染，可按需显式开启视觉分页；表格由 @file-viewer/renderer-spreadsheet 承接，默认保真解析，大文件自动启用 Worker，表头拖拽调列宽可按需显式开启。 |
+| `presentation` | 演示文稿 renderer 保持两条隔离引擎：PowerPoint 97–2003 `.ppt` 使用包内 `@file-viewer/ppt@0.3.1` Worker/OffscreenCanvas/WASM，标准资产布局无需配置 URL；`pptModuleUrl` / `pptWorkerUrl` / `pptWasmUrl` / `pptFontUrl` 仅用于自定义路径；`pptWorker` 与 `pptCache` 控制 Worker 和有界帧缓存。PPTX/OpenXML 使用 `@file-viewer/pptx` Worker，并可通过 `workerUrl` / `workerType` 覆盖。 |
 | `typst` / `data` / `cad` | 配置 Typst、SQLite、CAD/DWG/DXF/DWF 等 WASM、Worker、编码和渲染策略。 |
 | `hooks` / `beforeOperation` | 统一生命周期 hooks 和操作前置校验，可用于审计、权限、埋点和安全控制。 |
 
@@ -350,7 +352,7 @@ const options = {
 | --- | --- |
 | 通用 viewer assets | 所有 `*-full` 包都提供与自身同版本的 `file-viewer-copy-assets` CLI，用于把 Worker、WASM、字体和 vendor 资源复制到业务静态目录并生成完整性清单；`web-full` 的完整 `dist/` 还会直接携带这些资源。 |
 | CAD / DWG / DXF / DWF | 按需配置 `options.cad.wasmPath`、`workerUrl`、`dwfWasmUrl`、`dxfEncoding`，支持自托管和内网部署。 |
-| PDF / DOCX / Excel / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.pdf.cjkFontFallbackPath`、`options.pdf.identityFontRepair`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `options.presentation.workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底，未嵌入的中文字体默认按页加载本地 Noto Sans SC 分片回退，缺失 ToUnicode 的异常 Identity CJK 字体会在检测到乱码后尝试内存修复；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；PPTX 默认按需创建模块 Worker，严格 CSP、旧 WebView 或自托管 CDN 场景可固定 Worker 地址。 |
+| PDF / DOCX / Excel / PPT / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.pdf.cjkFontFallbackPath`、`options.pdf.identityFontRepair`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底，未嵌入的中文字体默认按页加载本地 Noto Sans SC 分片回退，缺失 ToUnicode 的异常 Identity CJK 字体会在检测到乱码后尝试内存修复；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，CSV / TSV 自动识别 UTF-8、GBK 与 GB18030，也可用 `options.spreadsheet.textEncoding` 显式覆盖，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；`.ppt` 从 `vendor/ppt/` 按需加载 `@file-viewer/ppt@0.3.1` Worker/OffscreenCanvas/WASM 和有界帧缓存，标准布局无需配置，`pptModuleUrl` / `pptWorkerUrl` / `pptWasmUrl` / `pptFontUrl` 仅覆盖自定义路径；PPTX 按需创建另一条模块 Worker，两条引擎严格隔离。 |
 | Typst / SQLite / Archive | 按需配置 Typst compiler/renderer WASM、`data.sqlWasmUrl`、`archive.workerUrl` / `archive.wasmUrl`；Typst 仅使用本地 WASM 真实渲染，不访问公共 CDN；Archive 兼容 GBK/GB18030 旧 ZIP 中文文件名，RAR、7z 和加密压缩包仍需要 libarchive Worker/WASM。 |
 | Drawing | Draw.io 默认使用随 viewer assets 分发的官方 diagrams.net 离线 viewer；路径特殊时可通过 `options.drawing.viewerScriptUrl` 覆盖，`preferOfficial:false` 才切到内置 SVG 兜底。 |
 | 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；所有 `*-full` 包默认使用部署基址下的 `file-viewer/`（根部署即 `/file-viewer/`）。Vite 使用 `copyAssets:true` 自动发布，其他构建工具运行 `npx --no-install file-viewer-copy-assets ./public/file-viewer`；资源放在其它位置时调用 `setDefaultFullAssetBaseUrl()`。 |
@@ -365,5 +367,5 @@ const options = {
 
 完整参数、生命周期 hooks、beforeOperation、主题、水印、搜索、缩放、打印和导出说明见官方文档: https://doc.file-viewer.app/
 
-在线 Demo: https://demo.file-viewer.app/ 。License: Apache-2.0。二开或商用请保留 Flyfish Viewer 来源说明；如果修复了通用兼容问题，也欢迎贡献回对应组件仓库。
+在线 Demo: https://demo.file-viewer.app/ 。File Viewer 自身源码与本仓生成的组件包使用 Apache-2.0；发行物若包含 `@file-viewer/ppt` 运行时，该运行时保留其独立 LICENSE 与 NOTICE，不被 Apache-2.0 重新许可。二开或商用请保留 Flyfish Viewer 来源说明；如果修复了通用兼容问题，也欢迎贡献回对应组件仓库。
 <!-- FILE_VIEWER_GENERATED:END -->

@@ -9,6 +9,7 @@ import {
   normalizeSource,
   renderFileViewerHandler,
   resolveFileViewerRendererPresetInputs,
+  syncFileViewerRenderSurfaceBackground,
   type FileRenderContext,
   type FileRenderHandler,
   type FileRenderHandlerRendererSession,
@@ -102,6 +103,7 @@ export async function createVueRenderSession(
   target: HTMLDivElement,
   context?: FileRenderContext
 ): Promise<FileViewerVueRenderSession> {
+  syncFileViewerRenderSurfaceBackground(target, context?.options)
   const registry = await createRendererRegistryForContext(context)
   const renderer = registry.getByExtension(type) || vueRendererRegistry.getByExtension(type)
 

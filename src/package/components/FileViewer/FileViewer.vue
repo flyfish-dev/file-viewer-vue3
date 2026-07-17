@@ -4,9 +4,12 @@ import { Moon, RotateCcw, Sun, ZoomIn, ZoomOut } from '@lucide/vue'
 import {
   createFileViewerTranslator,
   createFileViewerRequestScope,
+  FILE_VIEWER_RENDER_SURFACE_BACKGROUND_PROPERTY,
+  normalizeFileViewerRenderSurfaceBackground,
   reportFileViewerLifecycleHookError,
   reportFileViewerOperationError,
   resolveFileViewerColorScheme,
+  syncFileViewerRenderSurfaceBackground,
   toggleFileViewerColorScheme
 } from '@file-viewer/core'
 import type {
@@ -139,6 +142,26 @@ const {
   clearError,
   resetLoading
 } = useLoading(currentExtend, () => effectiveOptions.value)
+
+const viewerRootStyle = computed(() => {
+  const background = normalizeFileViewerRenderSurfaceBackground(
+    effectiveOptions.value?.ui?.surfaceBackground
+  )
+  return {
+    ...loadingVars.value,
+    ...(background
+      ? { [FILE_VIEWER_RENDER_SURFACE_BACKGROUND_PROPERTY]: background }
+      : {})
+  }
+})
+
+watch(() => effectiveOptions.value?.ui?.surfaceBackground, async () => {
+  await nextTick()
+  syncFileViewerRenderSurfaceBackground(output.value, effectiveOptions.value)
+  Array.from(output.value?.children || []).forEach(child => {
+    syncFileViewerRenderSurfaceBackground(child as HTMLElement, effectiveOptions.value)
+  })
+}, { immediate: true })
 
 const errorState = useViewerErrorState({
   currentExtend,
@@ -324,6 +347,33 @@ const {
   formatErrorMessage
 })
 
+let externalThemeRefreshSequence = 0
+watch(
+  [() => props.options?.theme, () => systemPrefersDark.value],
+  async ([nextTheme, nextSystemDark], [previousTheme, previousSystemDark]) => {
+    const nextScheme = resolveFileViewerColorScheme(nextTheme, nextSystemDark)
+    const previousScheme = resolveFileViewerColorScheme(previousTheme, previousSystemDark)
+    if (nextScheme === previousScheme || (!props.file && !props.url)) {
+      return
+    }
+
+    // Semantic renderers such as DOCX and spreadsheets resolve authored colors
+    // while rendering. Re-render them when the host changes theme, then restore
+    // the user's position instead of applying a visual filter to the document.
+    const sequence = externalThemeRefreshSequence += 1
+    const previousViewState = getViewState()
+    await nextTick()
+    await refreshPreview()
+    if (sequence === externalThemeRefreshSequence && previousViewState) {
+      await applyViewState(previousViewState, {
+        action: 'restore',
+        source: 'api'
+      })
+    }
+  },
+  { flush: 'post' }
+)
+
 const {
   downloadOriginalFile,
   exportRenderedHtml,
@@ -466,7 +516,7 @@ useViewerPreviewLifecycle({
     class='file-viewer'
     :data-viewer-theme='viewerTheme'
     :data-viewer-density='viewerDensity'
-    :style='loadingVars'
+    :style='viewerRootStyle'
   >
     <div class='viewer-stage'>
       <div
@@ -663,7 +713,7 @@ useViewerPreviewLifecycle({
   --file-viewer-toolbar-floating-button-height: 32px;
   --file-viewer-toolbar-floating-icon-size: 32px;
   --file-viewer-toolbar-floating-meter-min-width: 54px;
-  background: #ffffff;
+  background: var(--file-viewer-render-surface-background, #ffffff);
   color-scheme: light;
 }
 
@@ -690,7 +740,7 @@ useViewerPreviewLifecycle({
 }
 
 .file-viewer[data-viewer-theme='dark'] {
-  background: #0f171d;
+  background: var(--file-viewer-render-surface-background, #0f171d);
   color-scheme: dark;
 }
 
@@ -861,7 +911,7 @@ useViewerPreviewLifecycle({
   width: 100%;
   height: 100%;
   overflow: auto;
-  background: #f2f2f2;
+  background: var(--file-viewer-render-surface-background, #f2f2f2);
 }
 
 .content.hidden {
@@ -1010,7 +1060,7 @@ useViewerPreviewLifecycle({
 }
 
 .file-viewer[data-viewer-theme='dark'] .content {
-  background: #141c23;
+  background: var(--file-viewer-render-surface-background, #141c23);
 }
 
 .file-viewer[data-viewer-theme='dark'] .state-panel {
@@ -1050,7 +1100,7 @@ useViewerPreviewLifecycle({
 
 @media (prefers-color-scheme: dark) {
   .file-viewer[data-viewer-theme='system'] {
-    background: #0f171d;
+    background: var(--file-viewer-render-surface-background, #0f171d);
     color-scheme: dark;
   }
 
@@ -1084,7 +1134,7 @@ useViewerPreviewLifecycle({
   }
 
   .file-viewer[data-viewer-theme='system'] .content {
-    background: #141c23;
+    background: var(--file-viewer-render-surface-background, #141c23);
   }
 
   .file-viewer[data-viewer-theme='system'] .state-panel {

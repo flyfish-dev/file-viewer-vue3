@@ -55,14 +55,6 @@ import type {
 } from '@file-viewer/core'
 
 /**
- * 渲染器返回的可卸载包装实例。
- *
- * 旧版 Vue3 渲染器通常返回 Vue `App` 或只暴露 `$el` 与 `unmount()`
- * 的轻量对象。现在统一复用 core 的 framework-neutral 销毁契约。
- */
-export type AppWrapper = CoreFileViewerRenderedInstance;
-
-/**
  * 任意渲染器挂载完成后返回的可卸载实例。
  */
 export type Rendered = CoreFileViewerRenderedInstance;

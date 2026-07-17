@@ -28,7 +28,13 @@ export default defineConfig(ctx => {
   }
 
   if (ctx.mode === 'lib') {
-    config.plugins?.push(dts({ rollupTypes: true }))
+    // TypeScript 6 no longer gives declaration plugins the old implicit root.
+    // Keep the published 2.x type entry stable at dist/src/package/index.d.ts
+    // instead of silently flattening it to dist/index.d.ts.
+    config.plugins?.push(dts({
+      entryRoot: fileURLToPath(new URL('.', import.meta.url)),
+      rollupTypes: true
+    }))
     config.build = {
       target: 'es2015',
       copyPublicDir: false,
