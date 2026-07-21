@@ -1,4 +1,3 @@
-import styleHref from './style.css?url'
 import FileViewer from './components/FileViewer'
 import type { App, Component } from 'vue'
 import type { FileViewerExpose } from './common/type'
@@ -30,12 +29,7 @@ export interface FileViewerVue3PluginOptions {
 
 export type FileViewerVue3Handle = FileViewerExpose;
 
-/**
- * Vue3 插件安装器。
- *
- * 这里顺手引入库级样式，确保宿主项目只要 `app.use(FileViewer)`，
- * 就能拿到组件渲染所需的基础样式。
- */
+/** Vue3 plugin installer. Component styles follow each instance's isolation mode. */
 class Installer implements FileViewerInstaller {
 
   private installed: boolean = false
@@ -46,19 +40,6 @@ class Installer implements FileViewerInstaller {
     this.installed = true
   }
 }
-
-function ensureLibraryStyles(): void {
-  if (typeof document === 'undefined') return
-  if (document.querySelector('link[data-file-viewer-style="true"]')) return
-
-  const link = document.createElement('link')
-  link.rel = 'stylesheet'
-  link.href = styleHref
-  link.dataset.fileViewerStyle = 'true'
-  document.head.appendChild(link)
-}
-
-ensureLibraryStyles()
 
 export default new Installer()
 
@@ -92,9 +73,13 @@ export type {
   ViewerEventType,
   ViewerFetchFile,
   ViewerFetchInput,
+  ViewerFitMode,
+  ViewerFitOptions,
+  ViewerFitResult,
   ViewerMountOptions,
   ViewerOptions,
   ViewerPdfOptions,
+  ViewerPresentationOptions,
   ViewerSpreadsheetOptions,
   ViewerCoreOptions,
   ViewerSearchOptions,
@@ -103,6 +88,8 @@ export type {
   ViewerToolbarOptions,
   ViewerToolbarPosition,
   ViewerTypstOptions,
+  ViewerUiDensity,
+  ViewerUiOptions,
   ViewerViewState,
   ViewerWatermarkOptions,
   ViewerLifecycleContext,

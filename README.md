@@ -216,7 +216,7 @@ const options = {
 | `type` | 显式指定扩展名或 MIME 线索，覆盖自动识别结果。 |
 | `size` | 文件大小提示，用于生命周期上下文、加载状态和安全限制展示。 |
 | `options` | 完整 `FileViewerOptions`，所有框架包保持同一套参数语义。 |
-| `options.styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。Pure Web / IIFE / Custom Element 默认强隔离；框架组件默认保持历史兼容，可按需让 renderer 内容进入独立 ShadowRoot。 |
+| `options.styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。所有标准组件的 `auto` 默认使用 Shadow DOM，阻止宿主全局样式破坏工具栏和正文；旧项目可显式使用 `none`。 |
 | `onEvent` / `onStateChange` | Vanilla JS / Pure Web、React、Svelte 等命令式包装层的统一事件和状态订阅；Vue 组件会映射为原生 emit。 |
 
 ## 实际组件属性
@@ -237,7 +237,7 @@ const options = {
 | Options 字段 | 说明 |
 | --- | --- |
 | `theme` | `light`、`dark` 或 `system`，优先级高于浏览器 `prefers-color-scheme`。 |
-| `styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。`auto` 下 Web Component / full / IIFE 默认使用 Shadow DOM；Vue、React、Svelte、jQuery 默认保持 light DOM 兼容，但 renderer 内容可通过 `shadow` 获得独立渲染根。 |
+| `styleIsolation` | `auto`、`shadow`、`scoped` 或 `none`。`auto` 下 Web Component、IIFE、Vue、React、Svelte、jQuery 和 full 包均默认使用 Shadow DOM；依赖深层 class 覆盖的旧项目可显式使用 `none`。 |
 | `watermark` | 开启文字或图片水印，可设置透明度、旋转、间距、尺寸、字体和颜色。 |
 | `toolbar` | 控制主题切换、下载、打印、HTML 导出、缩放、按钮顺序和工具栏位置，并支持操作级前置校验。 |
 | `search` | 配置文档搜索、高亮 class、大小写、整词匹配、最大命中数和 debounce。 |
@@ -245,25 +245,29 @@ const options = {
 | `archive` | 配置压缩包 Worker/WASM、超时、缓存、包体限制和压缩包内单文件预览大小；旧 ZIP 中文文件名会自动按 GBK/GB18030 兼容解码。 |
 | `pdf` | 配置 PDF.js Worker、导航栏、目录、缩略图、旋转、流式读取、Range chunk 和凭据。 |
 | `docx` / `spreadsheet` | DOCX 由 @file-viewer/renderer-word 承接并使用自研 @file-viewer/docx，默认自动选择 Worker 或主线程解析，连续流式阅读和异步分批渲染，可按需显式开启视觉分页；表格由 @file-viewer/renderer-spreadsheet 承接，默认保真解析，大文件自动启用 Worker，表头拖拽调列宽可按需显式开启。 |
-| `presentation` | 演示文稿 renderer 保持两条隔离引擎：PowerPoint 97–2003 `.ppt` 使用包内 `@file-viewer/ppt@0.3.1` Worker/OffscreenCanvas/WASM，标准资产布局无需配置 URL；`pptModuleUrl` / `pptWorkerUrl` / `pptWasmUrl` / `pptFontUrl` 仅用于自定义路径；`pptWorker` 与 `pptCache` 控制 Worker 和有界帧缓存。PPTX/OpenXML 使用 `@file-viewer/pptx` Worker，并可通过 `workerUrl` / `workerType` 覆盖。 |
+| `presentation` | 演示文稿 renderer 保持两条隔离引擎：PowerPoint 97–2003 `.ppt` 使用包内 `@file-viewer/ppt@0.3.2` Worker/OffscreenCanvas/WASM，标准资产布局无需配置 URL；`pptModuleUrl` / `pptWorkerUrl` / `pptWasmUrl` / `pptFontUrl` 仅用于自定义路径；`pptWorker` 与 `pptCache` 控制 Worker 和有界帧缓存。PPTX/OpenXML 使用 `@file-viewer/pptx` Worker，并可通过 `workerUrl` / `workerType` 覆盖。 |
 | `typst` / `data` / `cad` | 配置 Typst、SQLite、CAD/DWG/DXF/DWF 等 WASM、Worker、编码和渲染策略。 |
 | `hooks` / `beforeOperation` | 统一生命周期 hooks 和操作前置校验，可用于审计、权限、埋点和安全控制。 |
 
 ## 样式隔离与主题定制
 
-推荐在 OA、低代码、微前端、门户和后台系统中优先使用 Pure Web / Web Component 或 full 包默认的 Shadow DOM 强隔离。宿主页面里的 `*`、`button`、`table`、`img`、`svg`、`canvas` 等全局样式不会直接侵入预览器工具栏和正文；预览器也不会把局部 reset 粗暴写到业务页面。
+所有标准组件默认使用 Shadow DOM 强隔离。宿主页面里的 `*`、`button`、`table`、`img`、`svg`、`canvas` 等全局样式不会直接侵入预览器工具栏和正文；预览器也不会把局部 reset 粗暴写到业务页面。
 
 | 模式 | 说明 |
 | --- | --- |
-| `auto` | 默认值。`@file-viewer/web`、`@file-viewer/web-full`、IIFE 和 `<flyfish-file-viewer>` 默认走 Shadow DOM；Vue、React、Svelte、jQuery 为兼容旧项目保持 light DOM，但 renderer 内容可由 core 按需隔离。 |
+| `auto` | 默认值。Web Component、IIFE、Vue、React、Svelte、jQuery 和 full 包均走 Shadow DOM，保护工具栏与 renderer 内容不受宿主全局 CSS 影响。 |
 | `shadow` | 显式创建 ShadowRoot 作为渲染面，适合宿主 CSS 不可控、微前端混挂、低代码平台和设计系统全局 reset 很强的页面。 |
-| `scoped` | 不创建 ShadowRoot，使用稳定根选择器、`@layer file-viewer` 和局部 reset 约束样式权重，适合需要被外层 CSS 轻度继承但又不想污染页面的场景。 |
+| `scoped` | 不创建 ShadowRoot，使用稳定根选择器和局部 reset 约束影响范围，适合需要被外层 CSS 轻度继承的场景。 |
 | `none` | 历史 light DOM 行为，保留给依赖深度 class 覆盖、旧主题 CSS 或自动化测试快照的项目。 |
+
+`styleIsolation` 是挂载边界配置；运行时切换模式时请重新挂载组件。`scoped` 与 `none` 都属于 Light DOM，仍可能被宿主的高权重或 `!important` 全局规则覆盖。
 
 定制优先级建议是：先使用 `--file-viewer-*` CSS 变量覆盖颜色、字体、间距、圆角、工具栏和按钮；需要命中内部结构时再使用稳定 Shadow Parts。当前 Web shell 暴露 `host`、`shell`、`toolbar`、`toolbar-group`、`toolbar-status`、`button`、`input` 和 `content`，后续 renderer 扩展应继续使用 `state-panel`、`watermark` 这类稳定命名。不要依赖内部 class 名，它们只服务实现细节。
 
+下面的 `file-viewer-host` 是实际 Shadow host 的 class：Vue 3 通过 `class`，Vue 2 通过 `containerClass`，React / Svelte 通过 `className` 传入，jQuery 则直接加在初始化节点上。
+
 ```css
-flyfish-file-viewer {
+.file-viewer-host {
   --file-viewer-bg: #f7f9fc;
   --file-viewer-text: #172033;
   --file-viewer-toolbar-bg: rgba(255, 255, 255, 0.96);
@@ -271,16 +275,16 @@ flyfish-file-viewer {
   --file-viewer-button-radius: 6px;
 }
 
-flyfish-file-viewer::part(toolbar) {
+.file-viewer-host::part(toolbar) {
   border: 1px solid rgba(20, 60, 100, 0.14);
 }
 
-flyfish-file-viewer::part(button) {
+.file-viewer-host::part(button) {
   font-weight: 600;
 }
 ```
 
-框架组件的推荐写法是在 `options` 中显式声明隔离策略：
+框架组件无需额外配置即可使用 Shadow DOM；也可以在 `options` 中显式声明以固定策略：
 
 ```ts
 const options = {
@@ -352,7 +356,7 @@ const options = {
 | --- | --- |
 | 通用 viewer assets | 所有 `*-full` 包都提供与自身同版本的 `file-viewer-copy-assets` CLI，用于把 Worker、WASM、字体和 vendor 资源复制到业务静态目录并生成完整性清单；`web-full` 的完整 `dist/` 还会直接携带这些资源。 |
 | CAD / DWG / DXF / DWF | 按需配置 `options.cad.wasmPath`、`workerUrl`、`dwfWasmUrl`、`dxfEncoding`，支持自托管和内网部署。 |
-| PDF / DOCX / Excel / PPT / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.pdf.cjkFontFallbackPath`、`options.pdf.identityFontRepair`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底，未嵌入的中文字体默认按页加载本地 Noto Sans SC 分片回退，缺失 ToUnicode 的异常 Identity CJK 字体会在检测到乱码后尝试内存修复；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，CSV / TSV 自动识别 UTF-8、GBK 与 GB18030，也可用 `options.spreadsheet.textEncoding` 显式覆盖，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；`.ppt` 从 `vendor/ppt/` 按需加载 `@file-viewer/ppt@0.3.1` Worker/OffscreenCanvas/WASM 和有界帧缓存，标准布局无需配置，`pptModuleUrl` / `pptWorkerUrl` / `pptWasmUrl` / `pptFontUrl` 仅覆盖自定义路径；PPTX 按需创建另一条模块 Worker，两条引擎严格隔离。 |
+| PDF / DOCX / Excel / PPT / PPTX | 按需配置 `options.pdf.workerUrl`、`options.pdf.cMapUrl`、`options.pdf.wasmUrl`、`options.pdf.standardFontDataUrl`、`options.pdf.cjkFontFallbackPath`、`options.pdf.identityFontRepair`、`options.docx.workerUrl`、`options.docx.workerJsZipUrl`、`options.spreadsheet.workerUrl`、`options.presentation.workerUrl` / `workerType`；PDF 默认探测真实静态 Worker，不可用时懒加载包内 handler 兜底，未嵌入的中文字体默认按页加载本地 Noto Sans SC 分片回退，缺失 ToUnicode 的异常 Identity CJK 字体会在检测到乱码后尝试内存修复；DOCX 默认自动选择 Worker 或主线程解析，Electron `file://` 等本地不安全协议会自动回退；Excel 默认 `worker: auto`，大文件达到 `workerAutoThreshold` 自动启用 Worker，CSV / TSV 自动识别 UTF-8、GBK 与 GB18030，也可用 `options.spreadsheet.textEncoding` 显式覆盖，列宽拖拽可通过 `options.spreadsheet.resizableColumns` 显式开启；`.ppt` 从 `vendor/ppt/` 按需加载 `@file-viewer/ppt@0.3.2` Worker/OffscreenCanvas/WASM 和有界帧缓存，标准布局无需配置，`pptModuleUrl` / `pptWorkerUrl` / `pptWasmUrl` / `pptFontUrl` 仅覆盖自定义路径；PPTX 按需创建另一条模块 Worker，两条引擎严格隔离。 |
 | Typst / SQLite / Archive | 按需配置 Typst compiler/renderer WASM、`data.sqlWasmUrl`、`archive.workerUrl` / `archive.wasmUrl`；Typst 仅使用本地 WASM 真实渲染，不访问公共 CDN；Archive 兼容 GBK/GB18030 旧 ZIP 中文文件名，RAR、7z 和加密压缩包仍需要 libarchive Worker/WASM。 |
 | Drawing | Draw.io 默认使用随 viewer assets 分发的官方 diagrams.net 离线 viewer；路径特殊时可通过 `options.drawing.viewerScriptUrl` 覆盖，`preferOfficial:false` 才切到内置 SVG 兜底。 |
 | 离线部署 | 运行时不依赖公共 CDN 或第三方在线资源；所有 `*-full` 包默认使用部署基址下的 `file-viewer/`（根部署即 `/file-viewer/`）。Vite 使用 `copyAssets:true` 自动发布，其他构建工具运行 `npx --no-install file-viewer-copy-assets ./public/file-viewer`；资源放在其它位置时调用 `setDefaultFullAssetBaseUrl()`。 |

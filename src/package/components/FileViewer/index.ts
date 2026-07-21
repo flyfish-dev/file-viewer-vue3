@@ -1,3 +1,3 @@
-import FileViewer from './FileViewer.vue'
+import FileViewer from './ShadowFileViewer.vue'
 
 export default FileViewer

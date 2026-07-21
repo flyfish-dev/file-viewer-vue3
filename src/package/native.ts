@@ -55,7 +55,8 @@ export const createFlyfishFileViewer = (
           size: source.size ?? options.size
         }),
     options: options.options,
-    onEvent: options.onEvent
+    onEvent: options.onEvent,
+    onStateChange: options.onStateChange
   }
   return mountViewer(container, initialOptions, {
     registry: vueRendererRegistry,

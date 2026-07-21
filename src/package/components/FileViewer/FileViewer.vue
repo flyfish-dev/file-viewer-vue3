@@ -514,14 +514,16 @@ useViewerPreviewLifecycle({
 <template>
   <div
     class='file-viewer'
+    part='shell'
     :data-viewer-theme='viewerTheme'
     :data-viewer-density='viewerDensity'
     :style='viewerRootStyle'
   >
-    <div class='viewer-stage'>
+    <div class='viewer-stage' part='stage'>
       <div
         v-if='showToolbar'
         class='viewer-actions'
+        part='toolbar'
         :class='{ "viewer-actions--floating": toolbarPosition === "bottom-right" }'
         :data-toolbar-position='toolbarPosition'
       >
@@ -529,12 +531,14 @@ useViewerPreviewLifecycle({
           <div
             v-if='toolbarItem === "zoom" && visibleToolbar.zoom'
             class='viewer-actions-group viewer-zoom-actions'
+            part='toolbar-group zoom-group'
             :aria-label='viewerLabels.zoomGroup'
           >
             <button
               v-if='operationAvailability.zoomOut'
               type='button'
               class='viewer-icon-button'
+              part='button zoom-out-button'
               :disabled='zoomButtonDisabled("canZoomOut")'
               :title='viewerLabels.zoomOut'
               :aria-label='viewerLabels.zoomOut'
@@ -546,6 +550,7 @@ useViewerPreviewLifecycle({
               v-if='operationAvailability.zoomReset'
               type='button'
               class='viewer-zoom-meter'
+              part='button zoom-meter'
               :disabled='zoomButtonDisabled("canReset")'
               :title='viewerLabels.zoomReset'
               @click='resetZoomByUser'
@@ -555,6 +560,7 @@ useViewerPreviewLifecycle({
             <span
               v-else
               class='viewer-zoom-meter viewer-zoom-meter--readonly'
+              part='zoom-meter'
               :title='zoomState.label'
               :aria-label='zoomState.label'
             >
@@ -564,6 +570,7 @@ useViewerPreviewLifecycle({
               v-if='operationAvailability.zoomIn'
               type='button'
               class='viewer-icon-button'
+              part='button zoom-in-button'
               :disabled='zoomButtonDisabled("canZoomIn")'
               :title='viewerLabels.zoomIn'
               :aria-label='viewerLabels.zoomIn'
@@ -575,6 +582,7 @@ useViewerPreviewLifecycle({
               v-if='operationAvailability.zoomReset'
               type='button'
               class='viewer-icon-button'
+              part='button zoom-reset-button'
               :disabled='zoomButtonDisabled("canReset")'
               :title='viewerLabels.zoomReset'
               :aria-label='viewerLabels.zoomReset'
@@ -586,6 +594,7 @@ useViewerPreviewLifecycle({
           <button
             v-else-if='toolbarItem === "download" && visibleToolbar.download'
             type='button'
+            part='button download-button'
             :disabled='toolbarDisabled'
             :title='viewerLabels.downloadTitle'
             @click='downloadOriginalFile'
@@ -595,6 +604,7 @@ useViewerPreviewLifecycle({
           <div
             v-else-if='toolbarItem === "print" && visibleToolbar.print'
             class='viewer-print-menu'
+            part='print-menu'
             :data-open='printMenuOpen ? "true" : "false"'
             @focusout='event => {
               const next = event.relatedTarget as Node | null
@@ -605,6 +615,7 @@ useViewerPreviewLifecycle({
           >
             <button
               type='button'
+              part='button print-button'
               :disabled='toolbarDisabled'
               :title='viewerLabels.printTitle'
               :aria-label='viewerLabels.printTitle'
@@ -614,10 +625,11 @@ useViewerPreviewLifecycle({
             >
               {{ viewerLabels.print }}
             </button>
-            <div class='viewer-print-menu-panel' role='menu'>
+            <div class='viewer-print-menu-panel' part='print-menu-panel' role='menu'>
               <button
                 type='button'
                 role='menuitem'
+                part='button print-direct-button'
                 :disabled='toolbarDisabled'
                 :title='viewerLabels.printTitle'
                 @click='printDirect'
@@ -627,6 +639,7 @@ useViewerPreviewLifecycle({
               <button
                 type='button'
                 role='menuitem'
+                part='button print-mask-button'
                 :disabled='toolbarDisabled'
                 :title='viewerLabels.printMaskTitle'
                 @click='printWithMaskAction'
@@ -638,6 +651,7 @@ useViewerPreviewLifecycle({
           <button
             v-else-if='toolbarItem === "exportHtml" && visibleToolbar.exportHtml'
             type='button'
+            part='button export-button'
             :disabled='toolbarDisabled'
             :title='viewerLabels.exportHtmlTitle'
             @click='exportRenderedHtml'
@@ -648,6 +662,7 @@ useViewerPreviewLifecycle({
             v-else-if='toolbarItem === "theme" && visibleToolbar.theme'
             type='button'
             class='viewer-icon-button viewer-theme-button'
+            part='button theme-button'
             :title='themeButtonTitle'
             :aria-label='themeButtonTitle'
             :aria-pressed='resolvedViewerTheme === "dark"'
@@ -659,12 +674,12 @@ useViewerPreviewLifecycle({
           </button>
         </template>
       </div>
-      <div class='viewer-content-shell'>
-        <div ref='output' class='content' data-viewer-scroll-root='true' :class='{ hidden: (loading && !progressiveReady) || !!error }' />
-        <div v-if='watermarkStyle' class='viewer-watermark' :style='watermarkStyle' />
+      <div class='viewer-content-shell' part='content-shell'>
+        <div ref='output' class='content' part='content' data-viewer-scroll-root='true' :class='{ hidden: (loading && !progressiveReady) || !!error }' />
+        <div v-if='watermarkStyle' class='viewer-watermark' part='watermark' :style='watermarkStyle' />
 
-        <div v-if='loading && !progressiveReady' class='state-panel loading-panel'>
-          <div class='loading-card'>
+        <div v-if='loading && !progressiveReady' class='state-panel loading-panel' part='state-panel loading-state'>
+          <div class='loading-card' part='state-card'>
             <div class='loading-icon'>{{ loadingTheme.badge }}</div>
             <div class='loading-copy'>
               <span class='loading-kicker'>{{ loadingTheme.label }}</span>
@@ -675,8 +690,8 @@ useViewerPreviewLifecycle({
           </div>
         </div>
 
-        <div v-else-if='error' class='state-panel error-panel'>
-          <div class='error-card'>
+        <div v-else-if='error' class='state-panel error-panel' part='state-panel error-state'>
+          <div class='error-card' part='state-card'>
             <strong>{{ errorState.title }}</strong>
             <p>{{ errorState.message }}</p>
           </div>
@@ -694,53 +709,57 @@ useViewerPreviewLifecycle({
   height: 100%;
   display: flex;
   flex-direction: column;
-  --file-viewer-toolbar-gap: 6px;
-  --file-viewer-toolbar-min-height: 45px;
-  --file-viewer-toolbar-padding: 6px 10px;
-  --file-viewer-toolbar-floating-offset: 16px;
-  --file-viewer-toolbar-floating-min-height: 42px;
-  --file-viewer-toolbar-floating-padding: 6px;
-  --file-viewer-toolbar-group-gap: 2px;
-  --file-viewer-toolbar-group-padding: 2px;
-  --file-viewer-toolbar-button-min-width: 42px;
-  --file-viewer-toolbar-button-height: 30px;
-  --file-viewer-toolbar-button-padding: 0 10px;
-  --file-viewer-toolbar-button-radius: 8px;
-  --file-viewer-toolbar-icon-size: 30px;
-  --file-viewer-toolbar-meter-min-width: 48px;
-  --file-viewer-toolbar-meter-padding: 0 8px;
-  --file-viewer-toolbar-floating-button-min-width: 48px;
-  --file-viewer-toolbar-floating-button-height: 32px;
-  --file-viewer-toolbar-floating-icon-size: 32px;
-  --file-viewer-toolbar-floating-meter-min-width: 54px;
-  background: var(--file-viewer-render-surface-background, #ffffff);
+  --_file-viewer-toolbar-gap: var(--file-viewer-toolbar-gap, 6px);
+  --_file-viewer-toolbar-min-height: var(--file-viewer-toolbar-min-height, 45px);
+  --_file-viewer-toolbar-padding: var(--file-viewer-toolbar-padding, 6px 10px);
+  --_file-viewer-toolbar-floating-offset: var(--file-viewer-toolbar-floating-offset, 16px);
+  --_file-viewer-toolbar-floating-min-height: var(--file-viewer-toolbar-floating-min-height, 42px);
+  --_file-viewer-toolbar-floating-padding: var(--file-viewer-toolbar-floating-padding, 6px);
+  --_file-viewer-toolbar-group-gap: var(--file-viewer-group-gap, var(--file-viewer-toolbar-group-gap, 2px));
+  --_file-viewer-toolbar-group-padding: var(--file-viewer-group-padding, var(--file-viewer-toolbar-group-padding, 2px));
+  --_file-viewer-toolbar-button-min-width: var(--file-viewer-button-min-width, var(--file-viewer-toolbar-button-min-width, 42px));
+  --_file-viewer-toolbar-button-height: var(--file-viewer-button-height, var(--file-viewer-toolbar-button-height, 30px));
+  --_file-viewer-toolbar-button-padding: var(--file-viewer-button-padding, var(--file-viewer-toolbar-button-padding, 0 10px));
+  --_file-viewer-toolbar-button-radius: var(--file-viewer-button-radius, var(--file-viewer-toolbar-button-radius, 8px));
+  --_file-viewer-toolbar-icon-size: var(--file-viewer-icon-button-size, var(--file-viewer-toolbar-icon-size, 30px));
+  --_file-viewer-toolbar-meter-min-width: var(--file-viewer-zoom-meter-min-width, var(--file-viewer-toolbar-meter-min-width, 48px));
+  --_file-viewer-toolbar-meter-padding: var(--file-viewer-zoom-meter-padding, var(--file-viewer-toolbar-meter-padding, 0 8px));
+  --_file-viewer-toolbar-floating-button-min-width: var(--file-viewer-floating-button-min-width, var(--file-viewer-toolbar-floating-button-min-width, 48px));
+  --_file-viewer-toolbar-floating-button-height: var(--file-viewer-floating-button-height, var(--file-viewer-toolbar-floating-button-height, 32px));
+  --_file-viewer-toolbar-floating-icon-size: var(--file-viewer-floating-icon-button-size, var(--file-viewer-toolbar-floating-icon-size, 32px));
+  --_file-viewer-toolbar-floating-meter-min-width: var(--file-viewer-floating-zoom-meter-min-width, var(--file-viewer-toolbar-floating-meter-min-width, 54px));
+  background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #ffffff));
+  color: var(--file-viewer-text, #172033);
+  font: var(--file-viewer-font, 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  letter-spacing: 0;
   color-scheme: light;
 }
 
 .file-viewer[data-viewer-density='compact'] {
-  --file-viewer-toolbar-gap: 3px;
-  --file-viewer-toolbar-min-height: 34px;
-  --file-viewer-toolbar-padding: 3px 5px;
-  --file-viewer-toolbar-floating-offset: 10px;
-  --file-viewer-toolbar-floating-min-height: 32px;
-  --file-viewer-toolbar-floating-padding: 3px;
-  --file-viewer-toolbar-group-gap: 2px;
-  --file-viewer-toolbar-group-padding: 2px;
-  --file-viewer-toolbar-button-min-width: 34px;
-  --file-viewer-toolbar-button-height: 26px;
-  --file-viewer-toolbar-button-padding: 0 6px;
-  --file-viewer-toolbar-button-radius: 6px;
-  --file-viewer-toolbar-icon-size: 26px;
-  --file-viewer-toolbar-meter-min-width: 42px;
-  --file-viewer-toolbar-meter-padding: 0 5px;
-  --file-viewer-toolbar-floating-button-min-width: 38px;
-  --file-viewer-toolbar-floating-button-height: 28px;
-  --file-viewer-toolbar-floating-icon-size: 28px;
-  --file-viewer-toolbar-floating-meter-min-width: 46px;
+  --_file-viewer-toolbar-gap: var(--file-viewer-toolbar-gap, 3px);
+  --_file-viewer-toolbar-min-height: var(--file-viewer-toolbar-min-height, 34px);
+  --_file-viewer-toolbar-padding: var(--file-viewer-toolbar-padding, 3px 5px);
+  --_file-viewer-toolbar-floating-offset: var(--file-viewer-toolbar-floating-offset, 10px);
+  --_file-viewer-toolbar-floating-min-height: var(--file-viewer-toolbar-floating-min-height, 32px);
+  --_file-viewer-toolbar-floating-padding: var(--file-viewer-toolbar-floating-padding, 3px);
+  --_file-viewer-toolbar-group-gap: var(--file-viewer-group-gap, var(--file-viewer-toolbar-group-gap, 2px));
+  --_file-viewer-toolbar-group-padding: var(--file-viewer-group-padding, var(--file-viewer-toolbar-group-padding, 2px));
+  --_file-viewer-toolbar-button-min-width: var(--file-viewer-button-min-width, var(--file-viewer-toolbar-button-min-width, 34px));
+  --_file-viewer-toolbar-button-height: var(--file-viewer-button-height, var(--file-viewer-toolbar-button-height, 26px));
+  --_file-viewer-toolbar-button-padding: var(--file-viewer-button-padding, var(--file-viewer-toolbar-button-padding, 0 6px));
+  --_file-viewer-toolbar-button-radius: var(--file-viewer-button-radius, var(--file-viewer-toolbar-button-radius, 6px));
+  --_file-viewer-toolbar-icon-size: var(--file-viewer-icon-button-size, var(--file-viewer-toolbar-icon-size, 26px));
+  --_file-viewer-toolbar-meter-min-width: var(--file-viewer-zoom-meter-min-width, var(--file-viewer-toolbar-meter-min-width, 42px));
+  --_file-viewer-toolbar-meter-padding: var(--file-viewer-zoom-meter-padding, var(--file-viewer-toolbar-meter-padding, 0 5px));
+  --_file-viewer-toolbar-floating-button-min-width: var(--file-viewer-floating-button-min-width, var(--file-viewer-toolbar-floating-button-min-width, 38px));
+  --_file-viewer-toolbar-floating-button-height: var(--file-viewer-floating-button-height, var(--file-viewer-toolbar-floating-button-height, 28px));
+  --_file-viewer-toolbar-floating-icon-size: var(--file-viewer-floating-icon-button-size, var(--file-viewer-toolbar-floating-icon-size, 28px));
+  --_file-viewer-toolbar-floating-meter-min-width: var(--file-viewer-floating-zoom-meter-min-width, var(--file-viewer-toolbar-floating-meter-min-width, 46px));
 }
 
 .file-viewer[data-viewer-theme='dark'] {
-  background: var(--file-viewer-render-surface-background, #0f171d);
+  background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #0f171d));
+  color: var(--file-viewer-text, #e5eef8);
   color-scheme: dark;
 }
 
@@ -754,15 +773,18 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions {
+  position: relative;
+  z-index: var(--file-viewer-z-toolbar, 20);
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--file-viewer-toolbar-gap);
-  min-height: var(--file-viewer-toolbar-min-height);
-  padding: var(--file-viewer-toolbar-padding);
-  border-bottom: 1px solid rgba(20, 35, 53, 0.06);
-  background: rgba(255, 255, 255, 0.92);
+  gap: var(--_file-viewer-toolbar-gap);
+  min-height: var(--_file-viewer-toolbar-min-height);
+  padding: var(--_file-viewer-toolbar-padding);
+  border-bottom: 1px solid var(--file-viewer-toolbar-border, rgba(20, 35, 53, 0.06));
+  background: var(--file-viewer-toolbar-bg, rgba(255, 255, 255, 0.92));
+  box-shadow: var(--file-viewer-toolbar-shadow, none);
 }
 
 .viewer-actions[data-toolbar-position='top-center'] {
@@ -771,36 +793,36 @@ useViewerPreviewLifecycle({
 
 .viewer-actions--floating {
   position: absolute;
-  z-index: 30;
-  right: calc(var(--file-viewer-toolbar-floating-offset) + env(safe-area-inset-right, 0px));
-  bottom: calc(var(--file-viewer-toolbar-floating-offset) + env(safe-area-inset-bottom, 0px));
-  min-height: var(--file-viewer-toolbar-floating-min-height);
-  padding: var(--file-viewer-toolbar-floating-padding);
-  border: 1px solid rgba(20, 35, 53, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16);
+  z-index: var(--file-viewer-z-floating-toolbar, 30);
+  right: calc(var(--_file-viewer-toolbar-floating-offset) + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--_file-viewer-toolbar-floating-offset) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--_file-viewer-toolbar-floating-min-height);
+  padding: var(--_file-viewer-toolbar-floating-padding);
+  border: 1px solid var(--file-viewer-toolbar-border, rgba(20, 35, 53, 0.1));
+  border-radius: var(--file-viewer-toolbar-radius, 999px);
+  background: var(--file-viewer-toolbar-bg, rgba(255, 255, 255, 0.94));
+  box-shadow: var(--file-viewer-toolbar-shadow, 0 18px 44px rgba(15, 23, 42, 0.16));
   backdrop-filter: blur(16px);
 }
 
 .viewer-actions-group {
   display: inline-flex;
   align-items: center;
-  gap: var(--file-viewer-toolbar-group-gap);
-  padding: var(--file-viewer-toolbar-group-padding);
-  border: 1px solid rgba(20, 35, 53, 0.08);
+  gap: var(--_file-viewer-toolbar-group-gap);
+  padding: var(--_file-viewer-toolbar-group-padding);
+  border: 1px solid var(--file-viewer-group-border, rgba(20, 35, 53, 0.08));
   border-radius: 999px;
-  background: rgba(20, 35, 53, 0.035);
+  background: var(--file-viewer-group-bg, rgba(20, 35, 53, 0.035));
 }
 
 .viewer-actions button {
-  min-width: var(--file-viewer-toolbar-button-min-width);
-  height: var(--file-viewer-toolbar-button-height);
-  padding: var(--file-viewer-toolbar-button-padding);
+  min-width: var(--_file-viewer-toolbar-button-min-width);
+  height: var(--_file-viewer-toolbar-button-height);
+  padding: var(--_file-viewer-toolbar-button-padding);
   border: 0;
-  border-radius: var(--file-viewer-toolbar-button-radius);
+  border-radius: var(--_file-viewer-toolbar-button-radius);
   background: transparent;
-  color: #40546a;
+  color: var(--file-viewer-button-color, #40546a);
   font: inherit;
   font-size: 12px;
   font-weight: 800;
@@ -808,8 +830,8 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions .viewer-icon-button {
-  width: var(--file-viewer-toolbar-icon-size);
-  min-width: var(--file-viewer-toolbar-icon-size);
+  width: var(--_file-viewer-toolbar-icon-size);
+  min-width: var(--_file-viewer-toolbar-icon-size);
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -817,14 +839,14 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions .viewer-zoom-meter {
-  min-width: var(--file-viewer-toolbar-meter-min-width);
-  height: var(--file-viewer-toolbar-button-height);
-  padding: var(--file-viewer-toolbar-meter-padding);
+  min-width: var(--_file-viewer-toolbar-meter-min-width);
+  height: var(--_file-viewer-toolbar-button-height);
+  padding: var(--_file-viewer-toolbar-meter-padding);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  color: #23465e;
+  color: var(--file-viewer-button-color, #23465e);
 }
 
 .viewer-actions .viewer-zoom-meter--readonly {
@@ -874,29 +896,34 @@ useViewerPreviewLifecycle({
 }
 
 .viewer-actions--floating button {
-  min-width: var(--file-viewer-toolbar-floating-button-min-width);
-  height: var(--file-viewer-toolbar-floating-button-height);
+  min-width: var(--_file-viewer-toolbar-floating-button-min-width);
+  height: var(--_file-viewer-toolbar-floating-button-height);
   border-radius: 999px;
 }
 
 .viewer-actions--floating .viewer-icon-button {
-  width: var(--file-viewer-toolbar-floating-icon-size);
-  min-width: var(--file-viewer-toolbar-floating-icon-size);
+  width: var(--_file-viewer-toolbar-floating-icon-size);
+  min-width: var(--_file-viewer-toolbar-floating-icon-size);
 }
 
 .viewer-actions--floating .viewer-zoom-meter {
-  min-width: var(--file-viewer-toolbar-floating-meter-min-width);
-  height: var(--file-viewer-toolbar-floating-button-height);
+  min-width: var(--_file-viewer-toolbar-floating-meter-min-width);
+  height: var(--_file-viewer-toolbar-floating-button-height);
 }
 
 .viewer-actions button:hover:not(:disabled) {
-  background: rgba(33, 163, 102, 0.1);
-  color: #16774c;
+  background: var(--file-viewer-button-hover-bg, rgba(33, 163, 102, 0.1));
+  color: var(--file-viewer-button-hover-color, #16774c);
 }
 
 .viewer-actions button:disabled {
-  color: #aab5c0;
+  color: var(--file-viewer-button-disabled-color, #aab5c0);
   cursor: not-allowed;
+}
+
+.viewer-actions button:focus-visible {
+  outline: 2px solid var(--file-viewer-focus-ring, rgba(33, 163, 102, 0.52));
+  outline-offset: 2px;
 }
 
 .viewer-content-shell {
@@ -911,14 +938,22 @@ useViewerPreviewLifecycle({
   width: 100%;
   height: 100%;
   overflow: auto;
-  background: var(--file-viewer-render-surface-background, #f2f2f2);
+  background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #f2f2f2));
+}
+
+.content :deep(.file-render),
+.content :deep(.file-render-host) {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 .content.hidden {
   visibility: hidden;
 }
 
-:global(.flyfish-search-match) {
+.content :deep(.flyfish-search-match) {
   padding: 0 2px;
   border-radius: 4px;
   background: rgba(255, 214, 102, 0.72);
@@ -926,7 +961,7 @@ useViewerPreviewLifecycle({
   box-shadow: 0 0 0 1px rgba(185, 128, 0, 0.14);
 }
 
-:global(.flyfish-search-match--active) {
+.content :deep(.flyfish-search-match--active) {
   background: rgba(47, 191, 122, 0.82);
   box-shadow: 0 0 0 2px rgba(30, 132, 83, 0.24);
 }
@@ -947,8 +982,10 @@ useViewerPreviewLifecycle({
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 248, 249, 0.98));
+  background: var(
+    --file-viewer-bg,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 248, 249, 0.98))
+  );
 }
 
 .loading-card,
@@ -960,7 +997,7 @@ useViewerPreviewLifecycle({
   padding: 22px;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(19, 36, 55, 0.06);
+  border: 1px solid var(--file-viewer-border, rgba(19, 36, 55, 0.06));
   box-shadow: 0 18px 42px rgba(15, 31, 47, 0.12);
 }
 
@@ -999,7 +1036,7 @@ useViewerPreviewLifecycle({
 .error-card strong {
   display: block;
   margin-top: 4px;
-  color: #16283b;
+  color: var(--file-viewer-text, #16283b);
   font-size: 20px;
   line-height: 1.2;
 }
@@ -1007,7 +1044,7 @@ useViewerPreviewLifecycle({
 .loading-copy p,
 .error-card p {
   margin: 8px 0 0;
-  color: #6a7d90;
+  color: var(--file-viewer-muted, #6a7d90);
   line-height: 1.6;
 }
 
@@ -1031,36 +1068,36 @@ useViewerPreviewLifecycle({
 }
 
 .file-viewer[data-viewer-theme='dark'] .viewer-actions--floating {
-  border-color: rgba(167, 185, 198, 0.16);
-  background: rgba(14, 22, 28, 0.94);
-  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+  border-color: var(--file-viewer-toolbar-border, rgba(167, 185, 198, 0.16));
+  background: var(--file-viewer-toolbar-bg, rgba(14, 22, 28, 0.94));
+  box-shadow: var(--file-viewer-toolbar-shadow, 0 20px 52px rgba(0, 0, 0, 0.34));
 }
 
 .file-viewer[data-viewer-theme='dark'] .viewer-actions {
-  border-bottom-color: rgba(167, 185, 198, 0.12);
-  background: rgba(14, 22, 28, 0.94);
+  border-bottom-color: var(--file-viewer-toolbar-border, rgba(167, 185, 198, 0.12));
+  background: var(--file-viewer-toolbar-bg, rgba(14, 22, 28, 0.94));
 }
 
 .file-viewer[data-viewer-theme='dark'] .viewer-actions button {
-  color: #b8c7d5;
+  color: var(--file-viewer-button-color, #b8c7d5);
 }
 
 .file-viewer[data-viewer-theme='dark'] .viewer-actions-group {
-  border-color: rgba(167, 185, 198, 0.13);
-  background: rgba(167, 185, 198, 0.08);
+  border-color: var(--file-viewer-group-border, rgba(167, 185, 198, 0.13));
+  background: var(--file-viewer-group-bg, rgba(167, 185, 198, 0.08));
 }
 
 .file-viewer[data-viewer-theme='dark'] .viewer-actions button:hover:not(:disabled) {
-  background: rgba(45, 212, 154, 0.14);
-  color: #5ee0ae;
+  background: var(--file-viewer-button-hover-bg, rgba(45, 212, 154, 0.14));
+  color: var(--file-viewer-button-hover-color, #5ee0ae);
 }
 
 .file-viewer[data-viewer-theme='dark'] .viewer-actions button:disabled {
-  color: #667888;
+  color: var(--file-viewer-button-disabled-color, #667888);
 }
 
 .file-viewer[data-viewer-theme='dark'] .content {
-  background: var(--file-viewer-render-surface-background, #141c23);
+  background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #141c23));
 }
 
 .file-viewer[data-viewer-theme='dark'] .state-panel {
@@ -1100,41 +1137,42 @@ useViewerPreviewLifecycle({
 
 @media (prefers-color-scheme: dark) {
   .file-viewer[data-viewer-theme='system'] {
-    background: var(--file-viewer-render-surface-background, #0f171d);
+    background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #0f171d));
+    color: var(--file-viewer-text, #e5eef8);
     color-scheme: dark;
   }
 
   .file-viewer[data-viewer-theme='system'] .viewer-actions--floating {
-    border-color: rgba(167, 185, 198, 0.16);
-    background: rgba(14, 22, 28, 0.94);
-    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+    border-color: var(--file-viewer-toolbar-border, rgba(167, 185, 198, 0.16));
+    background: var(--file-viewer-toolbar-bg, rgba(14, 22, 28, 0.94));
+    box-shadow: var(--file-viewer-toolbar-shadow, 0 20px 52px rgba(0, 0, 0, 0.34));
   }
 
   .file-viewer[data-viewer-theme='system'] .viewer-actions {
-    border-bottom-color: rgba(167, 185, 198, 0.12);
-    background: rgba(14, 22, 28, 0.94);
+    border-bottom-color: var(--file-viewer-toolbar-border, rgba(167, 185, 198, 0.12));
+    background: var(--file-viewer-toolbar-bg, rgba(14, 22, 28, 0.94));
   }
 
   .file-viewer[data-viewer-theme='system'] .viewer-actions button {
-    color: #b8c7d5;
+    color: var(--file-viewer-button-color, #b8c7d5);
   }
 
   .file-viewer[data-viewer-theme='system'] .viewer-actions-group {
-    border-color: rgba(167, 185, 198, 0.13);
-    background: rgba(167, 185, 198, 0.08);
+    border-color: var(--file-viewer-group-border, rgba(167, 185, 198, 0.13));
+    background: var(--file-viewer-group-bg, rgba(167, 185, 198, 0.08));
   }
 
   .file-viewer[data-viewer-theme='system'] .viewer-actions button:hover:not(:disabled) {
-    background: rgba(45, 212, 154, 0.14);
-    color: #5ee0ae;
+    background: var(--file-viewer-button-hover-bg, rgba(45, 212, 154, 0.14));
+    color: var(--file-viewer-button-hover-color, #5ee0ae);
   }
 
   .file-viewer[data-viewer-theme='system'] .viewer-actions button:disabled {
-    color: #667888;
+    color: var(--file-viewer-button-disabled-color, #667888);
   }
 
   .file-viewer[data-viewer-theme='system'] .content {
-    background: var(--file-viewer-render-surface-background, #141c23);
+    background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #141c23));
   }
 
   .file-viewer[data-viewer-theme='system'] .state-panel {
@@ -1186,14 +1224,5 @@ useViewerPreviewLifecycle({
     height: 30px;
     padding: 0 9px;
   }
-}
-</style>
-
-<style>
-.file-render {
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
 }
 </style>
