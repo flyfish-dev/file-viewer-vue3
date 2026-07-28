@@ -373,3 +373,34 @@ const options = {
 
 在线 Demo: https://demo.file-viewer.app/ 。File Viewer 自身源码与本仓生成的组件包使用 Apache-2.0；发行物若包含 `@file-viewer/ppt` 运行时，该运行时保留其独立 LICENSE 与 NOTICE，不被 Apache-2.0 重新许可。二开或商用请保留 Flyfish Viewer 来源说明；如果修复了通用兼容问题，也欢迎贡献回对应组件仓库。
 <!-- FILE_VIEWER_GENERATED:END -->
+
+## 扩展原生工具栏
+
+Vue 3 组件提供 `toolbar-start` 与 `toolbar-end` 插槽。它们保留内置搜索、缩放、下载、打印和主题能力，同时允许业务侧加入返回、文件信息、全屏、审核等操作。插槽属性会随预览状态响应式更新：
+
+```vue
+<FileViewer
+  :file="file"
+  :options="{
+    styleIsolation: 'none',
+    search: true,
+    toolbar: { search: true }
+  }"
+>
+  <template #toolbar-start="{ api, availability, zoomState, searchState }">
+    <button type="button" @click="goBack">返回</button>
+    <span>{{ file.name }}</span>
+  </template>
+
+  <template #toolbar-end="{ api }">
+    <button type="button" @click="toggleFullscreen">全屏</button>
+  </template>
+</FileViewer>
+```
+
+- `api`：完整的 `FileViewer` 实例 API。
+- `availability`：下载、打印、导出和缩放的当前可用性。
+- `zoomState`：当前缩放比例及按钮状态。
+- `searchState`：查询、命中总数和当前命中位置。
+
+使用宿主页面 CSS 定制插槽内容时，建议设置 `styleIsolation: 'none'`；Shadow DOM 模式下可使用内联样式或 File Viewer CSS 变量。

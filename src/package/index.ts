@@ -133,6 +133,7 @@ export type {
   FileViewerSourceType,
   FileViewerToolbarOptions,
   FileViewerToolbarPosition,
+  FileViewerToolbarSlotProps,
   FileViewerThemeMode,
   FileViewerTypstOptions,
   FileViewerViewScrollState,

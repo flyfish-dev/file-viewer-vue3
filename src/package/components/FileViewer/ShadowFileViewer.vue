@@ -18,12 +18,17 @@ import type {
   FileViewerPublicApi as FileViewerExpose,
 } from '@file-viewer/core'
 import componentStyleHref from '../../style.css?url'
+import type { FileViewerToolbarSlotProps } from '../../common/type'
 import FileViewerContent from './FileViewer.vue'
 
 defineOptions({ inheritAttrs: false })
 
 const props = defineProps<FileViewerProps>()
 const emit = defineEmits<FileViewerEmits>()
+const slots = defineSlots<{
+  'toolbar-start'?: (props: FileViewerToolbarSlotProps) => unknown
+  'toolbar-end'?: (props: FileViewerToolbarSlotProps) => unknown
+}>()
 const attrs = useAttrs()
 
 const contentViewer = ref<FileViewerExpose | null>(null)
@@ -230,7 +235,14 @@ onMounted(() => {
         @view-state-change="change => emit('view-state-change', change)"
         @fit-change="result => emit('fit-change', result)"
         @theme-change="theme => emit('theme-change', theme)"
-      />
+      >
+        <template v-if="slots['toolbar-start']" #toolbar-start="slotProps">
+          <slot name="toolbar-start" v-bind="slotProps" />
+        </template>
+        <template v-if="slots['toolbar-end']" #toolbar-end="slotProps">
+          <slot name="toolbar-end" v-bind="slotProps" />
+        </template>
+      </FileViewerContent>
     </Teleport>
   </div>
   <FileViewerContent
@@ -251,5 +263,12 @@ onMounted(() => {
     @view-state-change="change => emit('view-state-change', change)"
     @fit-change="result => emit('fit-change', result)"
     @theme-change="theme => emit('theme-change', theme)"
-  />
+  >
+    <template v-if="slots['toolbar-start']" #toolbar-start="slotProps">
+      <slot name="toolbar-start" v-bind="slotProps" />
+    </template>
+    <template v-if="slots['toolbar-end']" #toolbar-end="slotProps">
+      <slot name="toolbar-end" v-bind="slotProps" />
+    </template>
+  </FileViewerContent>
 </template>

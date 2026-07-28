@@ -23,6 +23,7 @@ interface UseViewerToolbarOptions {
   getZoomState: () => FileViewerZoomState;
   loading: Ref<boolean>;
   normalizedToolbar: ComputedRef<FileViewerToolbarOptions>;
+  rendererSearchAvailable: Ref<boolean>;
   renderedReady: Ref<boolean>;
   zoomState: FileViewerZoomState;
   emitOperationAvailabilityChange: (availability: FileViewerOperationAvailability) => void;
@@ -46,6 +47,7 @@ export const useViewerToolbar = ({
   getZoomState,
   loading,
   normalizedToolbar,
+  rendererSearchAvailable,
   renderedReady,
   zoomState,
   emitOperationAvailabilityChange,
@@ -59,6 +61,7 @@ export const useViewerToolbar = ({
     getHasError: () => !!error.value,
     getLoading: () => loading.value,
     getOptions,
+    getSearchAvailable: () => rendererSearchAvailable.value,
     getSourceUrl: () => currentSourceUrl.value,
     getToolbar: () => normalizedToolbar.value,
     getRenderedReady: () => renderedReady.value,

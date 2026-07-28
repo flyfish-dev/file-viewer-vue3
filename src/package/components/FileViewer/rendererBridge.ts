@@ -21,6 +21,7 @@ import {
 import { vueRendererDispatcher, vueRendererRegistry } from '../../vendors/renders'
 
 export type FileViewerVueRenderSession = FileRenderHandlerRendererSession<Rendered | undefined>
+export type FileViewerVueSearchAvailabilityListener = (available: boolean) => void
 
 type VueRenderHandler = FileRenderHandler<Rendered, HTMLDivElement>
 type VueRendererPresetInput = FileViewerRendererPresetInput<VueRenderHandler>
@@ -101,11 +102,13 @@ export async function createVueRenderSession(
   buffer: ArrayBuffer,
   type: string,
   target: HTMLDivElement,
-  context?: FileRenderContext
+  context?: FileRenderContext,
+  onSearchAvailabilityChange?: FileViewerVueSearchAvailabilityListener
 ): Promise<FileViewerVueRenderSession> {
   syncFileViewerRenderSurfaceBackground(target, context?.options)
   const registry = await createRendererRegistryForContext(context)
   const renderer = registry.getByExtension(type) || vueRendererRegistry.getByExtension(type)
+  onSearchAvailabilityChange?.(!!renderer?.load && !!renderer.capabilities?.search)
 
   if (renderer?.load) {
     return await renderer.load({

@@ -265,6 +265,18 @@ export type FileViewerEmits = CoreFileViewerComponentEmits;
 export type FileViewerExpose = CoreFileViewerPublicApi;
 
 /**
+ * Vue 3 原生工具栏扩展插槽的响应式属性。
+ *
+ * `api` 是组件实例方法门面；其余状态会随当前文件、缩放和搜索结果更新。
+ */
+export interface FileViewerToolbarSlotProps {
+  readonly api: CoreFileViewerPublicApi;
+  readonly availability: CoreFileViewerOperationAvailability;
+  readonly zoomState: CoreFileViewerZoomState;
+  readonly searchState: CoreFileViewerSearchState;
+}
+
+/**
  * 预览器通用配置。
  */
 export type FileViewerOptions = CoreFileViewerOptions;

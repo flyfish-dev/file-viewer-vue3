@@ -1,6 +1,16 @@
 <script setup lang='ts'>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Moon, RotateCcw, Sun, ZoomIn, ZoomOut } from '@lucide/vue'
+import {
+  ChevronDown,
+  ChevronUp,
+  Moon,
+  RotateCcw,
+  Search as SearchIcon,
+  Sun,
+  X,
+  ZoomIn,
+  ZoomOut
+} from '@lucide/vue'
 import {
   createFileViewerTranslator,
   createFileViewerRequestScope,
@@ -32,10 +42,17 @@ import { useViewerToolbar } from './hooks/useViewerToolbar'
 import { useViewerViewState } from './hooks/useViewerViewState'
 import { useViewerWatermark } from './hooks/useViewerWatermark'
 import { useViewerZoom } from './hooks/useViewerZoom'
+import { resolveViewerReadinessPresentation } from './hooks/viewerReadinessPresentation'
+import type { FileViewerToolbarSlotProps } from '../../common/type'
 
 const props = defineProps<FileViewerProps>()
 
 const emit = defineEmits<FileViewerEmits>()
+
+const slots = defineSlots<{
+  'toolbar-start'?: (props: FileViewerToolbarSlotProps) => unknown
+  'toolbar-end'?: (props: FileViewerToolbarSlotProps) => unknown
+}>()
 
 const filename = ref('')
 const output = ref<HTMLDivElement | null>(null)
@@ -84,12 +101,18 @@ const viewerLabels = computed(() => {
     printMaskTitle: t('toolbar.printMaskTitle'),
     exportHtml: t('toolbar.exportHtml'),
     exportHtmlTitle: t('toolbar.exportHtmlTitle'),
+    search: t('toolbar.search'),
+    searchPlaceholder: t('toolbar.searchPlaceholder'),
+    searchPrevious: t('toolbar.searchPrevious'),
+    searchNext: t('toolbar.searchNext'),
+    searchClear: t('toolbar.searchClear'),
     themeToLight: t('toolbar.themeToLight'),
     themeToDark: t('toolbar.themeToDark')
   }
 })
 const printMenuOpen = ref(false)
 const {
+  searchState,
   refreshDocumentIndex,
   clearDocumentState,
   getScrollContainer,
@@ -260,6 +283,7 @@ const {
 
 const {
   activeExportAdapter,
+  rendererSearchAvailable,
   renderedReady,
   progressiveReady,
   clearRenderedContent,
@@ -292,7 +316,7 @@ const {
   operationAvailability,
   visibleToolbar,
   toolbarOrder,
-  showToolbar,
+  showToolbar: showBuiltInToolbar,
   toolbarPosition,
   toolbarDisabled,
   zoomButtonDisabled
@@ -307,11 +331,45 @@ const {
   getZoomState,
   loading,
   normalizedToolbar,
+  rendererSearchAvailable,
   renderedReady,
   zoomState,
   emitOperationAvailabilityChange: availability => emit('operation-availability-change', availability),
   emitZoomChange: state => emit('zoom-change', state)
 })
+
+const hasToolbarSlots = computed(() => {
+  return Boolean(slots['toolbar-start'] || slots['toolbar-end'])
+})
+const showToolbar = computed(() => showBuiltInToolbar.value || hasToolbarSlots.value)
+const toolbarSearchQuery = ref('')
+const searchToolbarDisabled = computed(() => toolbarDisabled.value || !renderedReady.value)
+const readinessPresentation = computed(() => resolveViewerReadinessPresentation({
+  loading: loading.value,
+  progressiveReady: progressiveReady.value,
+  renderedReady: renderedReady.value,
+  hasError: Boolean(error.value)
+}))
+
+watch(() => searchState.query, query => {
+  if (toolbarSearchQuery.value !== query) {
+    toolbarSearchQuery.value = query
+  }
+})
+
+const runToolbarSearch = async () => {
+  const query = toolbarSearchQuery.value.trim()
+  toolbarSearchQuery.value = query
+  if (!query) {
+    return clearDocumentSearch()
+  }
+  return searchDocument(query)
+}
+
+const clearToolbarSearch = async () => {
+  toolbarSearchQuery.value = ''
+  return clearDocumentSearch()
+}
 
 const {
   cancelPreview,
@@ -527,9 +585,93 @@ useViewerPreviewLifecycle({
         :class='{ "viewer-actions--floating": toolbarPosition === "bottom-right" }'
         :data-toolbar-position='toolbarPosition'
       >
+        <div
+          v-if='slots["toolbar-start"]'
+          class='viewer-toolbar-slot viewer-toolbar-slot--start'
+          part='toolbar-slot toolbar-start'
+        >
+          <slot
+            name='toolbar-start'
+            :api='publicApi'
+            :availability='operationAvailability'
+            :zoom-state='zoomState'
+            :search-state='searchState'
+          />
+        </div>
         <template v-for='toolbarItem in toolbarOrder' :key='toolbarItem'>
           <div
-            v-if='toolbarItem === "zoom" && visibleToolbar.zoom'
+            v-if='toolbarItem === "search" && visibleToolbar.search'
+            class='viewer-actions-group viewer-search-actions'
+            part='toolbar-group search-group'
+            role='search'
+            :aria-label='viewerLabels.search'
+          >
+            <form class='viewer-search-form' @submit.prevent='runToolbarSearch'>
+              <input
+                v-model='toolbarSearchQuery'
+                class='viewer-search-input'
+                part='search-input'
+                type='search'
+                :disabled='searchToolbarDisabled'
+                :placeholder='viewerLabels.searchPlaceholder'
+                :aria-label='viewerLabels.searchPlaceholder'
+                @keydown.esc.stop.prevent='clearToolbarSearch'
+              >
+              <button
+                type='submit'
+                class='viewer-icon-button'
+                part='button search-submit-button'
+                :disabled='searchToolbarDisabled || !toolbarSearchQuery.trim()'
+                :title='viewerLabels.search'
+                :aria-label='viewerLabels.search'
+              >
+                <SearchIcon :size='14' :stroke-width='2.4' />
+              </button>
+            </form>
+            <span
+              class='viewer-search-count'
+              part='search-count'
+              aria-live='polite'
+            >
+              {{ searchState.total > 0 ? `${searchState.currentIndex + 1}/${searchState.total}` : '0/0' }}
+            </span>
+            <button
+              type='button'
+              class='viewer-icon-button'
+              part='button search-previous-button'
+              :disabled='searchToolbarDisabled || searchState.total === 0'
+              :title='viewerLabels.searchPrevious'
+              :aria-label='viewerLabels.searchPrevious'
+              @click='previousSearchResult'
+            >
+              <ChevronUp :size='14' :stroke-width='2.4' />
+            </button>
+            <button
+              type='button'
+              class='viewer-icon-button'
+              part='button search-next-button'
+              :disabled='searchToolbarDisabled || searchState.total === 0'
+              :title='viewerLabels.searchNext'
+              :aria-label='viewerLabels.searchNext'
+              @click='nextSearchResult'
+            >
+              <ChevronDown :size='14' :stroke-width='2.4' />
+            </button>
+            <button
+              v-if='toolbarSearchQuery || searchState.query'
+              type='button'
+              class='viewer-icon-button'
+              part='button search-clear-button'
+              :disabled='toolbarDisabled'
+              :title='viewerLabels.searchClear'
+              :aria-label='viewerLabels.searchClear'
+              @click='clearToolbarSearch'
+            >
+              <X :size='14' :stroke-width='2.4' />
+            </button>
+          </div>
+          <div
+            v-else-if='toolbarItem === "zoom" && visibleToolbar.zoom'
             class='viewer-actions-group viewer-zoom-actions'
             part='toolbar-group zoom-group'
             :aria-label='viewerLabels.zoomGroup'
@@ -673,12 +815,25 @@ useViewerPreviewLifecycle({
             <Moon v-else :size='15' :stroke-width='2.3' />
           </button>
         </template>
+        <div
+          v-if='slots["toolbar-end"]'
+          class='viewer-toolbar-slot viewer-toolbar-slot--end'
+          part='toolbar-slot toolbar-end'
+        >
+          <slot
+            name='toolbar-end'
+            :api='publicApi'
+            :availability='operationAvailability'
+            :zoom-state='zoomState'
+            :search-state='searchState'
+          />
+        </div>
       </div>
       <div class='viewer-content-shell' part='content-shell'>
-        <div ref='output' class='content' part='content' data-viewer-scroll-root='true' :class='{ hidden: (loading && !progressiveReady) || !!error }' />
+        <div ref='output' class='content' part='content' data-viewer-scroll-root='true' :class='{ hidden: readinessPresentation.contentHidden }' />
         <div v-if='watermarkStyle' class='viewer-watermark' part='watermark' :style='watermarkStyle' />
 
-        <div v-if='loading && !progressiveReady' class='state-panel loading-panel' part='state-panel loading-state'>
+        <div v-if='readinessPresentation.loadingStateVisible' class='state-panel loading-panel' part='state-panel loading-state'>
           <div class='loading-card' part='state-card'>
             <div class='loading-icon'>{{ loadingTheme.badge }}</div>
             <div class='loading-copy'>
@@ -815,6 +970,76 @@ useViewerPreviewLifecycle({
   background: var(--file-viewer-group-bg, rgba(20, 35, 53, 0.035));
 }
 
+.viewer-toolbar-slot {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_file-viewer-toolbar-gap);
+}
+
+.viewer-toolbar-slot--start {
+  margin-right: auto;
+}
+
+.viewer-toolbar-slot :deep(button),
+.viewer-toolbar-slot :deep(a) {
+  min-height: var(--_file-viewer-toolbar-button-height);
+}
+
+.viewer-search-actions {
+  min-width: 0;
+}
+
+.viewer-search-form {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.viewer-search-input {
+  box-sizing: border-box;
+  width: clamp(108px, 16vw, 188px);
+  height: var(--_file-viewer-toolbar-button-height);
+  padding: 0 9px;
+  border: 1px solid var(--file-viewer-input-border, rgba(20, 35, 53, 0.14));
+  border-radius: var(--_file-viewer-toolbar-button-radius);
+  outline: 0;
+  background: var(--file-viewer-input-bg, rgba(255, 255, 255, 0.9));
+  color: var(--file-viewer-text, #172033);
+  font: inherit;
+  font-size: 12px;
+}
+
+.viewer-search-input:focus {
+  border-color: var(--file-viewer-focus-ring, rgba(33, 163, 102, 0.52));
+  box-shadow: 0 0 0 2px var(--file-viewer-focus-ring, rgba(33, 163, 102, 0.16));
+}
+
+.viewer-search-input:disabled {
+  color: var(--file-viewer-button-disabled-color, #aab5c0);
+  cursor: not-allowed;
+}
+
+.viewer-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.viewer-search-count {
+  min-width: 38px;
+  color: var(--file-viewer-muted, #6a7d90);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.viewer-actions--floating .viewer-search-input {
+  width: clamp(104px, 14vw, 164px);
+  height: var(--_file-viewer-toolbar-floating-button-height);
+  border-radius: 999px;
+}
+
 .viewer-actions button {
   min-width: var(--_file-viewer-toolbar-button-min-width);
   height: var(--_file-viewer-toolbar-button-height);
@@ -933,20 +1158,67 @@ useViewerPreviewLifecycle({
   overflow: hidden;
 }
 
+/* Custom properties cross the component ShadowRoot, so host shells can tune
+ * the real scroll root without relying on ineffective outer deep selectors. */
+.content,
+.content :deep(.file-render),
+.content :deep(.file-render-host) {
+  scrollbar-width: var(--file-viewer-scrollbar-width);
+  scrollbar-color: var(--file-viewer-scrollbar-colors);
+}
+
 .content {
+  box-sizing: border-box;
   display: block;
   width: 100%;
   height: 100%;
   overflow: auto;
+  scroll-padding-block-start: var(--file-viewer-content-start-inset, 0px);
   background: var(--file-viewer-render-surface-background, var(--file-viewer-bg, #f2f2f2));
+}
+
+.content::-webkit-scrollbar,
+.content :deep(.file-render)::-webkit-scrollbar,
+.content :deep(.file-render-host)::-webkit-scrollbar {
+  width: var(--file-viewer-scrollbar-size);
+  height: var(--file-viewer-scrollbar-size);
+  background: var(--file-viewer-scrollbar-track);
+}
+
+.content::-webkit-scrollbar-track,
+.content::-webkit-scrollbar-corner,
+.content :deep(.file-render)::-webkit-scrollbar-track,
+.content :deep(.file-render)::-webkit-scrollbar-corner,
+.content :deep(.file-render-host)::-webkit-scrollbar-track,
+.content :deep(.file-render-host)::-webkit-scrollbar-corner {
+  background: var(--file-viewer-scrollbar-track);
+}
+
+.content::-webkit-scrollbar-thumb,
+.content :deep(.file-render)::-webkit-scrollbar-thumb,
+.content :deep(.file-render-host)::-webkit-scrollbar-thumb {
+  min-width: var(--file-viewer-scrollbar-thumb-min-size);
+  min-height: var(--file-viewer-scrollbar-thumb-min-size);
+  border: var(--file-viewer-scrollbar-thumb-border);
+  border-radius: var(--file-viewer-scrollbar-thumb-radius);
+  background-color: var(--file-viewer-scrollbar-thumb);
+  background-clip: var(--file-viewer-scrollbar-thumb-clip);
+}
+
+.content::-webkit-scrollbar-thumb:hover,
+.content :deep(.file-render)::-webkit-scrollbar-thumb:hover,
+.content :deep(.file-render-host)::-webkit-scrollbar-thumb:hover {
+  background-color: var(--file-viewer-scrollbar-thumb-hover);
 }
 
 .content :deep(.file-render),
 .content :deep(.file-render-host) {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
+  padding-block-start: var(--file-viewer-content-start-inset, 0px);
 }
 
 .content.hidden {

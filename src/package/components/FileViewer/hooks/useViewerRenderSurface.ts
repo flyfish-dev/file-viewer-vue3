@@ -67,6 +67,7 @@ export const useViewerRenderSurface = ({
   refreshViewStateProvider
 }: UseViewerRenderSurfaceOptions) => {
   const activeExportAdapter = shallowRef<FileRenderExportAdapter | null>(null)
+  const rendererSearchAvailable = ref(false)
   const renderedReady = ref(false)
   const progressiveReady = ref(false)
   const renderReadinessTarget = createFileViewerRenderReadinessTarget({
@@ -110,7 +111,10 @@ export const useViewerRenderSurface = ({
       notifyActiveUnloadComplete(context ?? null, nextReason)
     },
     onClearActiveDocumentContext: clearActiveDocumentContext,
-    onClearDocumentState: clearDocumentState,
+    onClearDocumentState: () => {
+      rendererSearchAvailable.value = false
+      clearDocumentState()
+    },
     onStartZoomObserver: startZoomObserver,
     onStopZoomObserver: stopZoomObserver,
     onClearZoomProvider: clearZoomProvider,
@@ -131,7 +135,8 @@ export const useViewerRenderSurface = ({
       sourceUrl: nextSourceUrl,
       streamUrl: nextStreamUrl,
       registerExportAdapter,
-      onProgressiveRender
+      onProgressiveRender,
+      version
     }) => {
       return await createVueRenderSession(nextBuffer, type, target as HTMLDivElement, {
         filename,
@@ -146,12 +151,17 @@ export const useViewerRenderSurface = ({
             options: nestedContext?.options || getOptions()
           })
         }
+      }, available => {
+        if (isCurrentRequest(version)) {
+          rendererSearchAvailable.value = available
+        }
       })
     }
   })
 
   return {
     activeExportAdapter,
+    rendererSearchAvailable,
     renderedReady,
     progressiveReady,
     ...actions

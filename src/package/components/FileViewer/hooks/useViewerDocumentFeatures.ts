@@ -48,6 +48,7 @@ export const useViewerDocumentFeatures = ({
   })
 
   return {
+    searchState: state,
     refreshDocumentIndex: documentActions.refreshDocumentIndex,
     clearDocumentState: documentActions.clearDocumentState,
     getScrollContainer: documentActions.getScrollContainer,
