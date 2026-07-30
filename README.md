@@ -36,6 +36,8 @@ createApp(App).use(FileViewer).mount('#app')
 
 Vue3 组件会跟随宿主生命周期自动释放资源。放在 Element Plus `el-dialog destroy-on-close`、`v-if`、路由页签或抽屉中时，组件卸载会取消当前加载、销毁 renderer session、清空预览 DOM，并触发 `unload-complete`，`reason` 为 `component-unmount`。如果弹窗只是隐藏组件，例如 `v-show` 或未开启 `destroy-on-close`，预览器会继续保留当前文档；需要主动释放时可通过模板 `ref` 调用 `viewerRef.value?.destroy()`。
 
+PPTX 图表同样遵循这套生命周期。图表会绑定当前预览根节点（包括 Shadow DOM）；组件卸载、主动 `destroy()`、切换文件或幻灯片窗口回收时都会销毁图表实例，不会向 `document.body` 泄漏图表 DOM。
+
 ## 能力范围
 
 `@file-viewer/vue3` 与其他标准组件包共享同一套 core 接口和 renderer/preset 装配模型；完整能力可通过按需 renderer 或 `@file-viewer/preset-all` 覆盖 PDF、Word、Excel、PPT、OFD、CAD/DWG/DXF/DWF、EPUB/UMD、压缩包、邮件、Markdown、代码高亮、图片、音频、视频、3D 模型、地理数据和结构化数据资产等预览链路。完整格式矩阵和参数说明见官方文档: https://doc.file-viewer.app/guide/formats

@@ -36,6 +36,8 @@ The component instance exposes `destroy()`, `downloadOriginalFile()`, `printRend
 
 The Vue 3 component follows host lifecycle teardown. Inside Element Plus `el-dialog destroy-on-close`, `v-if`, route tabs, or drawers, unmounting the component cancels active loading, destroys the renderer session, clears the rendered DOM, and emits `unload-complete` with `reason: "component-unmount"`. If a dialog only hides the component, such as `v-show` or no `destroy-on-close`, the active document stays mounted. For explicit cleanup while keeping the surrounding component alive, call `viewerRef.value?.destroy()` through the template ref.
 
+PPTX charts follow the same lifecycle. They stay bound to the active viewer root, including Shadow DOM, and their chart instances are destroyed on component unmount, explicit `destroy()`, source replacement, or slide-window eviction. No chart nodes are left under `document.body`.
+
 ## Capabilities
 
 `@file-viewer/vue3` shares the same `@file-viewer/core` contracts with the Pure Web, Vue 2, React, jQuery, and Svelte standard component packages. It supports PDF, Word, Excel, PowerPoint, OFD, CAD/DWG/DXF/DWF, EPUB/UMD, archives, email, Markdown, highlighted code, images, audio, video, 3D models, geospatial files, and structured data assets. See the complete format matrix and option reference at https://doc.file-viewer.app/guide/formats
