@@ -68,7 +68,7 @@ Every standard component package shares `@file-viewer/core` as the only common f
 
 ## Format Support Matrix
 
-The shared catalog registers 273 file extensions (224 stable and 49 experimental) across 46 preview pipelines. Experimental formats do not count toward stable support; full capability is assembled through renderer packages or presets.
+The shared catalog registers 274 file extensions (224 stable and 50 experimental) across 47 preview pipelines. Experimental formats do not count toward stable support; full capability is assembled through renderer packages or presets.
 
 | Preview pipeline | Category | Extensions | Level / status | Capabilities | Loading |
 | --- | --- | --- | --- | --- | --- |
@@ -95,6 +95,7 @@ The shared catalog registers 273 file extensions (224 stable and 49 experimental
 | 3D Model | model | `.glb`, `.gltf`, `.obj`, `.stl`, `.ply`, `.fbx`, `.dae`, `.3ds`, `.3mf`, `.amf`, `.usd`, `.usda`, `.usdc`, `.usdz`, `.kmz`, `.step`, `.stp`, `.iges`, `.igs`, `.ifc`, `.3dm`, `.brep`, `.pcd`, `.wrl`, `.vrml`, `.xyz`, `.vtk`, `.vtp` | structured / stable | download, zoom(provider) | lazy async |
 | Geospatial | geo | `.geojson`, `.kml`, `.gpx`, `.shp` | structured / stable | download, print, HTML export, zoom(provider), search | lazy async |
 | Drawing | drawing | `.excalidraw`, `.drawio`, `.dio`, `.mermaid`, `.mmd`, `.plantuml`, `.puml` | structured / stable | download, print, HTML export, zoom(provider), search | lazy async |
+| BPMN 2.0 | drawing | `.bpmn` | structured / experimental | download, zoom(provider) | lazy async |
 | Mind Map | mindmap | `.xmind` | structured / stable | download, print, HTML export, zoom(provider), search | lazy async |
 | EPUB | ebook | `.epub` | high-fidelity / stable | download, HTML export, search(provider) | lazy async |
 | FictionBook | ebook | `.fb2` | structured / stable | download, print, HTML export, search | lazy async |

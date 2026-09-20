@@ -71,7 +71,7 @@ English README: [README.en.md](./README.en.md)。
 
 ## 格式支持矩阵
 
-共享格式目录当前注册 273 个扩展名（224 个稳定、49 个实验），映射到 46 条预览链路。实验格式不计入稳定支持数量；完整能力通过 renderer / preset 按需装配。
+共享格式目录当前注册 274 个扩展名（224 个稳定、50 个实验），映射到 47 条预览链路。实验格式不计入稳定支持数量；完整能力通过 renderer / preset 按需装配。
 
 | 预览链路 | 分类 | 扩展名 | 等级 / 状态 | 能力 | 加载 |
 | --- | --- | --- | --- | --- | --- |
@@ -98,6 +98,7 @@ English README: [README.en.md](./README.en.md)。
 | 3D Model | model | `.glb`, `.gltf`, `.obj`, `.stl`, `.ply`, `.fbx`, `.dae`, `.3ds`, `.3mf`, `.amf`, `.usd`, `.usda`, `.usdc`, `.usdz`, `.kmz`, `.step`, `.stp`, `.iges`, `.igs`, `.ifc`, `.3dm`, `.brep`, `.pcd`, `.wrl`, `.vrml`, `.xyz`, `.vtk`, `.vtp` | structured / stable | 下载, 缩放(Provider) | 按需异步 |
 | Geospatial | geo | `.geojson`, `.kml`, `.gpx`, `.shp` | structured / stable | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
 | Drawing | drawing | `.excalidraw`, `.drawio`, `.dio`, `.mermaid`, `.mmd`, `.plantuml`, `.puml` | structured / stable | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
+| BPMN 2.0 | drawing | `.bpmn` | structured / experimental | 下载, 缩放(Provider) | 按需异步 |
 | Mind Map | mindmap | `.xmind` | structured / stable | 下载, 打印, HTML, 缩放(Provider), 搜索 | 按需异步 |
 | EPUB | ebook | `.epub` | high-fidelity / stable | 下载, HTML, 搜索(Provider) | 按需异步 |
 | FictionBook | ebook | `.fb2` | structured / stable | 下载, 打印, HTML, 搜索 | 按需异步 |
