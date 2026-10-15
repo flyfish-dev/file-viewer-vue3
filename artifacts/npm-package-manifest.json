@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "mode": "runtime-only",
+  "sourceCommit": "d20dc22c19a9101647a8198f46dc4037277da7cc",
+  "aggregateRelease": {
+    "repository": "flyfish-dev/file-viewer",
+    "tag": "v3.2.0",
+    "commit": "8cf8e2795300ada3bb27a090c786bdf2d0211ae4"
+  },
+  "package": {
+    "packageName": "@file-viewer/vue3",
+    "version": "3.2.0",
+    "tarball": "file-viewer-vue3-3.2.0.tgz",
+    "tarballSize": 157584,
+    "sha256": "4927c6d7d965a0bd187335a9dff3e635f5369a0ff4e021f25bc36e04f3d229b9",
+    "fileCount": 46,
+    "integrity": "sha512-Tfles2sjxi0x3Lyv8S2cHg3LexZE9xUgfbpfm+/uBeBT/cga4cDCYojnHP6O5NuoXDXJf93JArcsYvRtQnud3Q==",
+    "license": "Apache-2.0",
+    "releaseArtifact": {
+      "includeTarball": true
+    }
+  }
+}
