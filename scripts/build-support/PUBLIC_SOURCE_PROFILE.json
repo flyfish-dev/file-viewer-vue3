@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "profile": "public-source-3.3.4-v1",
+  "publicHead": "3510bcdd465bd7405845f1f3baad08713ab4a407",
+  "proposalSha256": "1494f5b304c8717e234d330bc7dbae6aed6916c3f43c1d292688afb3d5b317fb",
+  "generatedHelpers": {
+    "standalone-owner-require.mjs": {
+      "bytes": 739,
+      "sha256": "a89193cf5e7874e1a284933523d0b4ab112b6d7aa21bcfa3dba4035ef2be7cf6",
+      "repositories": [
+        "file-viewer-web",
+        "file-viewer-web-full"
+      ]
+    },
+    "stage-design-runtime.mjs": {
+      "bytes": 850,
+      "sha256": "af4c0d660912f8602255d53d49f993b7f9d7e331c42e22910a6a69c3f32b41c1",
+      "repositories": [
+        "file-viewer-web-full"
+      ]
+    }
+  }
+}
