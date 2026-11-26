@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "profile": "public-source-3.3.6-v1",
-  "publicHead": "afc181bd14d6f4251d7d2da2b7decd7cd1497938",
+  "profile": "public-source-3.3.7-v1",
+  "publicHead": "100903f11facb6df0ca519f3435a968d219915c6",
   "proposalSha256": "1494f5b304c8717e234d330bc7dbae6aed6916c3f43c1d292688afb3d5b317fb",
   "generatedHelpers": {
     "standalone-owner-require.mjs": {
